@@ -23,13 +23,24 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type DataFlowConnection struct {
+	// ConnectionSource is the source deployment sends data
+	ConnectionSource DeploymentRef `json:"connectionSource"`
+
+	// ConnectionDestination is the destination deployment receives data
+	ConnectionDestination DeploymentRef `json:"connectionDestination"`
+}
+
 // DataflowSpec defines the desired state of Dataflow
 type DataflowSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Dataflow. Edit dataflow_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// AppName is the name of the application, which should be the same as the "app" lable in Deployment
+	AppName string `json:"appName"`
+
+	// DataFlowConnections is the list of connections between deployments
+	DataFlowConnections []DataFlowConnection `json:"dataFlowConnections"`
 }
 
 // DataflowStatus defines the observed state of Dataflow

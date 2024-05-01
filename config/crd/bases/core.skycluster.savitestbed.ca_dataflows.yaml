@@ -34,10 +34,47 @@ spec:
           spec:
             description: DataflowSpec defines the desired state of Dataflow
             properties:
-              foo:
-                description: Foo is an example field of Dataflow. Edit dataflow_types.go
-                  to remove/update
+              appName:
+                description: AppName is the name of the application, which should
+                  be the same as the "app" lable in Deployment
                 type: string
+              dataFlowConnections:
+                description: DataFlowConnections is the list of connections between
+                  deployments
+                items:
+                  properties:
+                    connectionDestination:
+                      description: ConnectionDestination is the destination deployment
+                        receives data
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    connectionSource:
+                      description: ConnectionSource is the source deployment sends
+                        data
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                  required:
+                  - connectionDestination
+                  - connectionSource
+                  type: object
+                type: array
+            required:
+            - appName
+            - dataFlowConnections
             type: object
           status:
             description: DataflowStatus defines the observed state of Dataflow

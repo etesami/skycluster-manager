@@ -11,6 +11,8 @@ spec:
     kind: SkyDeployment
     listKind: SkyDeploymentList
     plural: skydeployments
+    shortNames:
+    - skydeploy
     singular: skydeployment
   scope: Namespaced
   versions:
@@ -34,10 +36,20 @@ spec:
           spec:
             description: SkyDeploymentSpec defines the desired state of SkyDeployment
             properties:
-              foo:
-                description: Foo is an example field of SkyDeployment. Edit skydeployment_types.go
-                  to remove/update
-                type: string
+              deploymentRef:
+                description: DeploymentRef is a reference to a Deployment resource
+                  in the same namespace
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - deploymentRef
             type: object
           status:
             description: SkyDeploymentStatus defines the observed state of SkyDeployment

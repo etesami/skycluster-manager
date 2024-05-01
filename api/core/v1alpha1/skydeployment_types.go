@@ -28,8 +28,8 @@ type SkyDeploymentSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of SkyDeployment. Edit skydeployment_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// DeploymentRef is a reference to a Deployment resource in the same namespace
+	DeploymentRef DeploymentRef `json:"deploymentRef"`
 }
 
 // SkyDeploymentStatus defines the observed state of SkyDeployment
@@ -40,6 +40,7 @@ type SkyDeploymentStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:shortName=skydeploy
 
 // SkyDeployment is the Schema for the skydeployments API
 type SkyDeployment struct {

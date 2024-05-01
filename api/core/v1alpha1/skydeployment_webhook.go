@@ -17,18 +17,51 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // log is for logging in this package.
-var skydeploymentlog = logf.Log.WithName("skydeployment-resource")
+var skydeploymentlog = logf.Log.WithName("[SkyWebhook]")
 
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *SkyDeployment) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		// For(r).
+		For(&appsv1.Deployment{}).
+		WithDefaulter(&SkyDeployment{}).
 		Complete()
 }
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+//+kubebuilder:webhook:path=/mutate-apps-v1-deployment,mutating=true,failurePolicy=fail,sideEffects=None,groups=apps,resources=deployments,verbs=create;update;delete,versions=v1,name=mdeployment.kb.io,admissionReviewVersions=v1
+
+// var _ webhook.Defaulter = &SkyDeployment{}
+var _ webhook.CustomDefaulter = &SkyDeployment{}
+
+// Default implements webhook.Defaulter so a webhook will be registered for the type
+func (r *SkyDeployment) Default(ctx context.Context, obj runtime.Object) error {
+	// func (r *SkyDeployment) Default() {
+
+	deploy, ok := obj.(*appsv1.Deployment)
+
+	if !ok {
+		skydeploymentlog.Info("Deployment received", "Deployment", obj)
+		return nil
+	}
+
+	skyAnnotation := metav1.HasAnnotation(deploy.ObjectMeta, "managed-by")
+	if skyAnnotation {
+		skydeploymentlog.Info("Contains label", "Lable", deploy.Annotations["managed-by"])
+		// set scheduler to skycluster scheduler
+		deploy.Spec.Template.Spec.SchedulerName = "skycluster-scheduler"
+	}
+
+	return nil
+}
