@@ -1,0 +1,558 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: system
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: namespace
+    app.kubernetes.io/part-of: skycluster-manager
+    control-plane: controller-manager
+  name: skycluster-manager-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: dataflows.core.skycluster.savitestbed.ca
+spec:
+  group: core.skycluster.savitestbed.ca
+  names:
+    kind: Dataflow
+    listKind: DataflowList
+    plural: dataflows
+    singular: dataflow
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Dataflow is the Schema for the dataflows API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DataflowSpec defines the desired state of Dataflow
+            properties:
+              foo:
+                description: Foo is an example field of Dataflow. Edit dataflow_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: DataflowStatus defines the observed state of Dataflow
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: skyapps.core.skycluster.savitestbed.ca
+spec:
+  group: core.skycluster.savitestbed.ca
+  names:
+    kind: SkyApp
+    listKind: SkyAppList
+    plural: skyapps
+    singular: skyapp
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SkyApp is the Schema for the skyapps API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SkyAppSpec defines the desired state of SkyApp
+            properties:
+              foo:
+                description: Foo is an example field of SkyApp. Edit skyapp_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: SkyAppStatus defines the observed state of SkyApp
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: skydeployments.core.skycluster.savitestbed.ca
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVyakNDQXhhZ0F3SUJBZ0lSQUtYK29VQWVseTdCNDZNT1N0NU9aaDh3RFFZSktvWklodmNOQVFFTEJRQXcKYnpFZU1Cd0dBMVVFQ2hNVmJXdGpaWEowSUdSbGRtVnNiM0J0Wlc1MElFTkJNU0l3SUFZRFZRUUxEQmwxWW5WdQpkSFZBWlhOdUxXczRjeTB4SUNoVlluVnVkSFVwTVNrd0p3WURWUVFERENCdGEyTmxjblFnZFdKMWJuUjFRR1Z6CmJpMXJPSE10TVNBb1ZXSjFiblIxS1RBZUZ3MHlOREF4TVRjd05EQXdORE5hRncwek5EQXhNVGN3TkRBd05ETmEKTUc4eEhqQWNCZ05WQkFvVEZXMXJZMlZ5ZENCa1pYWmxiRzl3YldWdWRDQkRRVEVpTUNBR0ExVUVDd3daZFdKMQpiblIxUUdWemJpMXJPSE10TVNBb1ZXSjFiblIxS1RFcE1DY0dBMVVFQXd3Z2JXdGpaWEowSUhWaWRXNTBkVUJsCmMyNHRhemh6TFRFZ0tGVmlkVzUwZFNrd2dnR2lNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJqd0F3Z2dHS0FvSUIKZ1FESld4UVg5UHRqNVByazBUeFg3bnNReElscUhFZlE5cW5DYXhwN1o2MFZhNllQTlVTU3ZnTFZwN2FNTWYyUApMcS9ZUkdoYUI4d21oQTd1NHc4Q0U5TVpUWmVwTmQ0aU02MmVHWnJ4ZjNEUG1aUlMvdWgyUytwNVA4ZzUxbS9CCmd6dGE2TWpDc2VIUjRndDRWcVpoQUFTNDRINk9DWm5sa3hUQXZDUXFxanJkU3ZuNWgzVEdnUEcvb0k3d04wQkkKV3RVd1NFL0c3c2JHNlAvRjZGbEpjN25hZzV4NE0xaVRSblhENVdreHlOU0ROdDVKNDc2Z2k0d0lrVXVkSmZaZgpTdUcxYTByWjRRM2Y0WWhvdU93eUpVZjFPRy9XUzFhQllTQWY2cXJCemc2VUhiemV2dzFWNktmNTFQWEVqMjVhClBHWGdIWkJKQlIrelJualVkTi9UcjJqbUhwWjlHY1RsUzgweVkzbFFSSXF2NXJRNDJHck9PZXhtNklKRHpCakIKMXp4cDN5RDZCdnlMNktEaEROWGZFaXpLSVpoZmg1ZitHVFExNDYrSWN4YWpuUDBQcEZhM3Q3S3BMUlQ4VkRwTAptdkd2Y2RvaFJlc2dXOEw4RFF5R0dXMDFDbWp2VjdRU000YmV5YUlmN010Y054aG1OeE03NW9uZHJJcFpTQjhqCkRCc0NBd0VBQWFORk1FTXdEZ1lEVlIwUEFRSC9CQVFEQWdJRU1CSUdBMVVkRXdFQi93UUlNQVlCQWY4Q0FRQXcKSFFZRFZSME9CQllFRkVTKzhlQXZtcFBac3lQZHFzaGw5QUlqRy8wVk1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQgpnUUFMWEFGdTFEWE9JS2ZZU2JkejhuTzBlSnBMNjd0UTdKVzZlQ2xTRlNjRkIvazhOYlBaMTZjdGN0a01NRkF2ClAxU0trcEVhWmtPeVFHWktYSFhtQkEzZ0FyUm94Z2tIUFUzRm5jSVpNNHYvemd4Wk1vVkxxai91aUp6MkxlRmIKeGYwaVJmY1pRNnp4VFlERkxBb20vMXIrcnQxQVlPektnVTBWMVJ6alpLOVM5ZllMN25SVDFHMzlHcTErY3ZxNwpSQVh1cWxzb25aVHM1c0wyeHVBNlk2bEk2OTYwMmJjeWh2aSsvWGZiZXl2R3pTTUl2TTc1TmlGbVdwV0JlTjlMClppTmhleWFUcERab1lFeU9wQW8wYzlDN0VNcFBhUTNrN0JvMy9HM0dxVVVJeDlSaGNMSGdFZjNFTXBxZEg2Z3EKV1poTkFUdWNVK0oxL3ZHYzRyQ2RxTGlpem12eURMYjJmQ3o0cUNrVkwyVGV4dkJGN240ancwVzRpdS9obVU2cQo1VEZnQUpnZzEyWmtHcmYxcXpUbmVuTi9PbmpzcWF1RjV3VXlsc3h1N2xtZER6ZnBsYzNFT2hUQjlKbGx1TTN2CnpZbmlEekwveDdNOG1Oc3NvQU9QK3BNeExaYnlBMFpMcUhkV1VYVFhQZXZST3BYLy85a3JDT3JlMlQrRnpBWnIKWTRZPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+        url: https://172.17.0.1:9443/mutate-apps-v1-deployment
+      conversionReviewVersions:
+      - v1
+  group: core.skycluster.savitestbed.ca
+  names:
+    kind: SkyDeployment
+    listKind: SkyDeploymentList
+    plural: skydeployments
+    singular: skydeployment
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SkyDeployment is the Schema for the skydeployments API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SkyDeploymentSpec defines the desired state of SkyDeployment
+            properties:
+              foo:
+                description: Foo is an example field of SkyDeployment. Edit skydeployment_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: SkyDeploymentStatus defines the observed state of SkyDeployment
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: controller-manager-sa
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: serviceaccount
+    app.kubernetes.io/part-of: skycluster-manager
+  name: skycluster-manager-controller-manager
+  namespace: skycluster-manager-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: leader-election-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: role
+    app.kubernetes.io/part-of: skycluster-manager
+  name: skycluster-manager-leader-election-role
+  namespace: skycluster-manager-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: skycluster-manager-manager-role
+rules:
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - dataflows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - dataflows/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - dataflows/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skydeployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skydeployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skydeployments/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: metrics-reader
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: skycluster-manager
+  name: skycluster-manager-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: proxy-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: skycluster-manager
+  name: skycluster-manager-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: leader-election-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: rolebinding
+    app.kubernetes.io/part-of: skycluster-manager
+  name: skycluster-manager-leader-election-rolebinding
+  namespace: skycluster-manager-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: skycluster-manager-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: skycluster-manager-controller-manager
+  namespace: skycluster-manager-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: manager-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: skycluster-manager
+  name: skycluster-manager-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: skycluster-manager-manager-role
+subjects:
+- kind: ServiceAccount
+  name: skycluster-manager-controller-manager
+  namespace: skycluster-manager-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: proxy-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: skycluster-manager
+  name: skycluster-manager-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: skycluster-manager-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: skycluster-manager-controller-manager
+  namespace: skycluster-manager-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: controller-manager-metrics-service
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: service
+    app.kubernetes.io/part-of: skycluster-manager
+    control-plane: controller-manager
+  name: skycluster-manager-controller-manager-metrics-service
+  namespace: skycluster-manager-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: deployment
+    app.kubernetes.io/part-of: skycluster-manager
+    control-plane: controller-manager
+  name: skycluster-manager-controller-manager
+  namespace: skycluster-manager-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        image: controller:latest
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.15.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: skycluster-manager-controller-manager
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: skycluster-manager-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVyakNDQXhhZ0F3SUJBZ0lSQUtYK29VQWVseTdCNDZNT1N0NU9aaDh3RFFZSktvWklodmNOQVFFTEJRQXcKYnpFZU1Cd0dBMVVFQ2hNVmJXdGpaWEowSUdSbGRtVnNiM0J0Wlc1MElFTkJNU0l3SUFZRFZRUUxEQmwxWW5WdQpkSFZBWlhOdUxXczRjeTB4SUNoVlluVnVkSFVwTVNrd0p3WURWUVFERENCdGEyTmxjblFnZFdKMWJuUjFRR1Z6CmJpMXJPSE10TVNBb1ZXSjFiblIxS1RBZUZ3MHlOREF4TVRjd05EQXdORE5hRncwek5EQXhNVGN3TkRBd05ETmEKTUc4eEhqQWNCZ05WQkFvVEZXMXJZMlZ5ZENCa1pYWmxiRzl3YldWdWRDQkRRVEVpTUNBR0ExVUVDd3daZFdKMQpiblIxUUdWemJpMXJPSE10TVNBb1ZXSjFiblIxS1RFcE1DY0dBMVVFQXd3Z2JXdGpaWEowSUhWaWRXNTBkVUJsCmMyNHRhemh6TFRFZ0tGVmlkVzUwZFNrd2dnR2lNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJqd0F3Z2dHS0FvSUIKZ1FESld4UVg5UHRqNVByazBUeFg3bnNReElscUhFZlE5cW5DYXhwN1o2MFZhNllQTlVTU3ZnTFZwN2FNTWYyUApMcS9ZUkdoYUI4d21oQTd1NHc4Q0U5TVpUWmVwTmQ0aU02MmVHWnJ4ZjNEUG1aUlMvdWgyUytwNVA4ZzUxbS9CCmd6dGE2TWpDc2VIUjRndDRWcVpoQUFTNDRINk9DWm5sa3hUQXZDUXFxanJkU3ZuNWgzVEdnUEcvb0k3d04wQkkKV3RVd1NFL0c3c2JHNlAvRjZGbEpjN25hZzV4NE0xaVRSblhENVdreHlOU0ROdDVKNDc2Z2k0d0lrVXVkSmZaZgpTdUcxYTByWjRRM2Y0WWhvdU93eUpVZjFPRy9XUzFhQllTQWY2cXJCemc2VUhiemV2dzFWNktmNTFQWEVqMjVhClBHWGdIWkJKQlIrelJualVkTi9UcjJqbUhwWjlHY1RsUzgweVkzbFFSSXF2NXJRNDJHck9PZXhtNklKRHpCakIKMXp4cDN5RDZCdnlMNktEaEROWGZFaXpLSVpoZmg1ZitHVFExNDYrSWN4YWpuUDBQcEZhM3Q3S3BMUlQ4VkRwTAptdkd2Y2RvaFJlc2dXOEw4RFF5R0dXMDFDbWp2VjdRU000YmV5YUlmN010Y054aG1OeE03NW9uZHJJcFpTQjhqCkRCc0NBd0VBQWFORk1FTXdEZ1lEVlIwUEFRSC9CQVFEQWdJRU1CSUdBMVVkRXdFQi93UUlNQVlCQWY4Q0FRQXcKSFFZRFZSME9CQllFRkVTKzhlQXZtcFBac3lQZHFzaGw5QUlqRy8wVk1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQgpnUUFMWEFGdTFEWE9JS2ZZU2JkejhuTzBlSnBMNjd0UTdKVzZlQ2xTRlNjRkIvazhOYlBaMTZjdGN0a01NRkF2ClAxU0trcEVhWmtPeVFHWktYSFhtQkEzZ0FyUm94Z2tIUFUzRm5jSVpNNHYvemd4Wk1vVkxxai91aUp6MkxlRmIKeGYwaVJmY1pRNnp4VFlERkxBb20vMXIrcnQxQVlPektnVTBWMVJ6alpLOVM5ZllMN25SVDFHMzlHcTErY3ZxNwpSQVh1cWxzb25aVHM1c0wyeHVBNlk2bEk2OTYwMmJjeWh2aSsvWGZiZXl2R3pTTUl2TTc1TmlGbVdwV0JlTjlMClppTmhleWFUcERab1lFeU9wQW8wYzlDN0VNcFBhUTNrN0JvMy9HM0dxVVVJeDlSaGNMSGdFZjNFTXBxZEg2Z3EKV1poTkFUdWNVK0oxL3ZHYzRyQ2RxTGlpem12eURMYjJmQ3o0cUNrVkwyVGV4dkJGN240ancwVzRpdS9obVU2cQo1VEZnQUpnZzEyWmtHcmYxcXpUbmVuTi9PbmpzcWF1RjV3VXlsc3h1N2xtZER6ZnBsYzNFT2hUQjlKbGx1TTN2CnpZbmlEekwveDdNOG1Oc3NvQU9QK3BNeExaYnlBMFpMcUhkV1VYVFhQZXZST3BYLy85a3JDT3JlMlQrRnpBWnIKWTRZPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    url: https://172.17.0.1:9443/mutate-apps-v1-deployment
+  failurePolicy: Fail
+  name: mdeployment.kb.io
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - deployments
+  sideEffects: None

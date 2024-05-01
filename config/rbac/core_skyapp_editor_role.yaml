@@ -1,0 +1,31 @@
+# permissions for end users to edit skyapps.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: skyapp-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/part-of: skycluster-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: skyapp-editor-role
+rules:
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps/status
+  verbs:
+  - get

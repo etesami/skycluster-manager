@@ -1,0 +1,6 @@
+## Append samples of your project ##
+resources:
+- core_v1alpha1_skydeployment.yaml
+- core_v1alpha1_skyapp.yaml
+- core_v1alpha1_dataflow.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

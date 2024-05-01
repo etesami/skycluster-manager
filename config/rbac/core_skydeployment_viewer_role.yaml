@@ -1,0 +1,27 @@
+# permissions for end users to view skydeployments.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: skydeployment-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/part-of: skycluster-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: skydeployment-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skydeployments
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skydeployments/status
+  verbs:
+  - get

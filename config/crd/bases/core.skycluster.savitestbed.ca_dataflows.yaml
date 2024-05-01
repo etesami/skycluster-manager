@@ -1,0 +1,49 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: dataflows.core.skycluster.savitestbed.ca
+spec:
+  group: core.skycluster.savitestbed.ca
+  names:
+    kind: Dataflow
+    listKind: DataflowList
+    plural: dataflows
+    singular: dataflow
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Dataflow is the Schema for the dataflows API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DataflowSpec defines the desired state of Dataflow
+            properties:
+              foo:
+                description: Foo is an example field of Dataflow. Edit dataflow_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: DataflowStatus defines the observed state of Dataflow
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

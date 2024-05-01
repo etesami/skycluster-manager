@@ -1,0 +1,27 @@
+# permissions for end users to view skyapps.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: skyapp-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: skycluster-manager
+    app.kubernetes.io/part-of: skycluster-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: skyapp-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps/status
+  verbs:
+  - get

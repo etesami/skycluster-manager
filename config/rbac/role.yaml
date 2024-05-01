@@ -1,0 +1,84 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - dataflows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - dataflows/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - dataflows/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skyapps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skydeployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skydeployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster.savitestbed.ca
+  resources:
+  - skydeployments/status
+  verbs:
+  - get
+  - patch
+  - update
