@@ -24,6 +24,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -49,6 +50,13 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+func customLoggerFormat() zap.EncoderConfigOption {
+	return func(encoderConfig *zapcore.EncoderConfig) {
+		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05Z")
+	}
+}
+
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -58,8 +66,18 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	file, err := os.Create("/var/log/skycluster/logs.log")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
 	opts := zap.Options{
 		Development: true,
+		EncoderConfigOptions: []zap.EncoderConfigOption{
+			customLoggerFormat(),
+		},
+		DestWriter: file,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
