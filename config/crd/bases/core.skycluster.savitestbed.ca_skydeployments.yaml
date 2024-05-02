@@ -36,6 +36,9 @@ spec:
           spec:
             description: SkyDeploymentSpec defines the desired state of SkyDeployment
             properties:
+              appName:
+                description: AppName refers to the name of the sky application
+                type: string
               deploymentRef:
                 description: DeploymentRef is a reference to a Deployment resource
                   in the same namespace
@@ -49,6 +52,7 @@ spec:
                 - namespace
                 type: object
             required:
+            - appName
             - deploymentRef
             type: object
           status:

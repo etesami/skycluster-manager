@@ -19,6 +19,8 @@ package core
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,20 +38,67 @@ type DataflowReconciler struct {
 //+kubebuilder:rbac:groups=core.skycluster.savitestbed.ca,resources=dataflows,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core.skycluster.savitestbed.ca,resources=dataflows/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core.skycluster.savitestbed.ca,resources=dataflows/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core.skycluster.savitestbed.ca,resources=skyapps,verbs=get;list;watch;create;update;patch;delete
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Dataflow object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
+// Reconcile functions workflow:
+// 1. Fetch the Dataflow
+// 2. Create a new SkyApp object and set OwnerReferences
+// 3. Get the skyapp and if it does not exist create it (this trigers the reconcilation of SkyDeplopoyments)
 func (r *DataflowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx).WithName("[Dataflow]")
 
-	// TODO(user): your logic here
+	// Fetch the Dataflow
+	dataflow := &corev1alpha1.Dataflow{}
+	err := r.Get(ctx, req.NamespacedName, dataflow)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		logger.Error(err, "[WARNING] Failed to get Dataflow")
+		return ctrl.Result{}, err
+	}
+
+	logger.Info("Dataflow Found", "Name", dataflow.Name, "AppName", dataflow.Spec.AppName)
+
+	// Create a new SkyApp object and set OwnerReferences
+	skyApp := &corev1alpha1.SkyApp{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dataflow.Spec.AppName,
+			Namespace: dataflow.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: dataflow.APIVersion,
+					Kind:       dataflow.Kind,
+					Name:       dataflow.Name,
+					UID:        dataflow.UID,
+				},
+			},
+		},
+	}
+
+	skyAppFound := true
+	// get the skyapp and if it does not exist create it
+	err = r.Get(ctx, client.ObjectKeyFromObject(skyApp), skyApp)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			skyAppFound = false
+			logger.Info("SkyApp not found, creating a new one")
+		} else {
+			logger.Error(err, "[WARNING] Failed to get SkyApp")
+			return ctrl.Result{}, err
+		}
+	}
+
+	if !skyAppFound {
+		// Create the object
+		err = r.Create(ctx, skyApp)
+		if err != nil {
+			logger.Error(err, "[WARNING] Failed to create SkyApp")
+			return ctrl.Result{}, err
+		}
+	} else {
+		logger.Info("SkyApp Found", "Name", skyApp.Name)
+	}
 
 	return ctrl.Result{}, nil
 }

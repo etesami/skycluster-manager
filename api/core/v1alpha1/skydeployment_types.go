@@ -28,6 +28,9 @@ type SkyDeploymentSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// AppName refers to the name of the sky application
+	AppName string `json:"appName"`
+
 	// DeploymentRef is a reference to a Deployment resource in the same namespace
 	DeploymentRef DeploymentRef `json:"deploymentRef"`
 }
