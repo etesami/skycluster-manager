@@ -66,7 +66,7 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	file, err := os.Create("/var/log/skycluster/logs.log")
+	file, err := os.Create("/var/log/skycluster/skycluster-manager.log")
 	if err != nil {
 		panic(err)
 	}
