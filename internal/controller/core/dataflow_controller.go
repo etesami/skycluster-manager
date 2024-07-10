@@ -38,11 +38,11 @@ type DataflowReconciler struct {
 //+kubebuilder:rbac:groups=core.skycluster.savitestbed.ca,resources=dataflows,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core.skycluster.savitestbed.ca,resources=dataflows/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core.skycluster.savitestbed.ca,resources=dataflows/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core.skycluster.savitestbed.ca,resources=skyapps,verbs=get;list;watch;create;update;patch;delete
+////+kubebuilder:rbac:groups=core.skycluster.savitestbed.ca,resources=skyapps,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile functions workflow:
 // 1. Fetch the Dataflow
-// 2. Create a new SkyApp object and set OwnerReferences
+// 2. Create a new SkyApp object and set OwnerReferences, we do not expect to see SkyApp already created
 // 3. Get the skyapp and if it does not exist create it (this trigers the reconcilation of SkyDeplopoyments)
 func (r *DataflowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx).WithName("[Dataflow]")

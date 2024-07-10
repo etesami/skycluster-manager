@@ -181,6 +181,25 @@ spec:
               appName:
                 description: AppName refers to the name of the sky application
                 type: string
+              deployLocation:
+                properties:
+                  location:
+                    type: string
+                  name:
+                    type: string
+                  provider:
+                    type: string
+                  region:
+                    type: string
+                  zone:
+                    type: string
+                required:
+                - location
+                - name
+                - provider
+                - region
+                - zone
+                type: object
               deploymentRef:
                 description: DeploymentRef is a reference to a Deployment resource
                   in the same namespace
@@ -195,6 +214,7 @@ spec:
                 type: object
             required:
             - appName
+            - deployLocation
             - deploymentRef
             type: object
           status:

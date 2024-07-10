@@ -33,6 +33,8 @@ type SkyDeploymentSpec struct {
 
 	// DeploymentRef is a reference to a Deployment resource in the same namespace
 	DeploymentRef DeploymentRef `json:"deploymentRef"`
+
+	DeployLocation DeployLocation `json:"deployLocation"`
 }
 
 // SkyDeploymentStatus defines the observed state of SkyDeployment

@@ -1,0 +1,14 @@
+strict digraph {
+
+
+	"obj_payment_sav" [ color="2", colorscheme="paired12", fillcolor="6", style="filled",  weight=0 ];
+
+	"obj_frontend_aw" [ color="2", colorscheme="paired12", fillcolor="5", style="filled",  weight=0 ];
+
+	"obj_frontend_aw" -> "obj_backend_sav" [  weight=0 ];
+
+	"obj_backend_sav" [ color="2", colorscheme="paired12", fillcolor="6", style="filled",  weight=0 ];
+
+	"obj_backend_sav" -> "obj_payment_sav" [  weight=0 ];
+
+}
