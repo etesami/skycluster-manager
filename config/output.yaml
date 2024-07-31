@@ -1,0 +1,259 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: ilptasks.core.skycluster-manager.savitestbed.ca
+spec:
+  group: core.skycluster-manager.savitestbed.ca
+  names:
+    kind: ILPTask
+    listKind: ILPTaskList
+    plural: ilptasks
+    singular: ilptask
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ILPTask is the Schema for the ilptasks API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ILPTaskSpec defines the desired state of ILPTask
+            properties:
+              foo:
+                description: Foo is an example field of ILPTask. Edit ilptask_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: ILPTaskStatus defines the observed state of ILPTask
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-controller-manager
+  namespace: skycluster-manager-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-leader-election-role
+  namespace: skycluster-manager-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-ilptask-editor-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - ilptasks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - ilptasks/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-ilptask-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - ilptasks
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - ilptasks/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: skycluster-manager-manager-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - ilptasks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - ilptasks/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - ilptasks/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: skycluster-manager-metrics-auth-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: skycluster-manager-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-leader-election-rolebinding
+  namespace: skycluster-manager-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: skycluster-manager-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: skycluster-manager-controller-manager
+  namespace: skycluster-manager-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: skycluster-manager-manager-role
+subjects:
+- kind: ServiceAccount
+  name: skycluster-manager-controller-manager
+  namespace: skycluster-manager-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: skycluster-manager-metrics-auth-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: skycluster-manager-metrics-auth-role
+subjects:
+- kind: ServiceAccount
+  name: skycluster-manager-controller-manager
+  namespace: skycluster-manager-system
