@@ -18,4 +18,34 @@ resources:
   kind: ILPTask
   path: github.com/etesami/skycluster-manager/api/core/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: skycluster-manager.savitestbed.ca
+  group: core
+  kind: Provider
+  path: github.com/etesami/skycluster-manager/api/core/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: skycluster-manager.savitestbed.ca
+  group: core
+  kind: VirtualService
+  path: github.com/etesami/skycluster-manager/api/core/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: skycluster-manager.savitestbed.ca
+  group: core
+  kind: SkyApp
+  path: github.com/etesami/skycluster-manager/api/core/v1alpha1
+  version: v1alpha1
+  webhooks:
+    conversion: true
+    webhookVersion: v1
 version: "3"

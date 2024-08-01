@@ -1,0 +1,10 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ILPTask
+metadata:
+  labels:
+    app.kubernetes.io/name: skycluster-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: ilptask-sample
+spec:
+  problemDefinition: |
+    print("Hello, World!")

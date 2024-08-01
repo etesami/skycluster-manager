@@ -38,13 +38,193 @@ spec:
           spec:
             description: ILPTaskSpec defines the desired state of ILPTask
             properties:
-              foo:
+              problemDefinition:
                 description: Foo is an example field of ILPTask. Edit ilptask_types.go
+                  to remove/update
+                type: string
+            required:
+            - problemDefinition
+            type: object
+          status:
+            description: ILPTaskStatus defines the observed state of ILPTask
+            properties:
+              result:
+                type: string
+              solution:
+                type: string
+            required:
+            - result
+            - solution
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: providers.core.skycluster-manager.savitestbed.ca
+spec:
+  group: core.skycluster-manager.savitestbed.ca
+  names:
+    kind: Provider
+    listKind: ProviderList
+    plural: providers
+    singular: provider
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Provider is the Schema for the providers API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ProviderSpec defines the desired state of Provider
+            properties:
+              foo:
+                description: Foo is an example field of Provider. Edit provider_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: ILPTaskStatus defines the observed state of ILPTask
+            description: ProviderStatus defines the observed state of Provider
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: skyapps.core.skycluster-manager.savitestbed.ca
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUV5akNDQXpLZ0F3SUJBZ0lSQUtuT0tJRWpNdGdFWUVodkR5RnRRaEF3RFFZSktvWklodmNOQVFFTEJRQXcKZlRFZU1Cd0dBMVVFQ2hNVmJXdGpaWEowSUdSbGRtVnNiM0J0Wlc1MElFTkJNU2t3SndZRFZRUUxEQ0IxWW5WdQpkSFZBWlhOdUxYTnJlV05zZFhOMFpYSXRNU0FvVldKMWJuUjFLVEV3TUM0R0ExVUVBd3duYld0alpYSjBJSFZpCmRXNTBkVUJsYzI0dGMydDVZMngxYzNSbGNpMHhJQ2hWWW5WdWRIVXBNQjRYRFRJME1EZ3dNVEF4TlRneE1Wb1gKRFRNME1EZ3dNVEF4TlRneE1Wb3dmVEVlTUJ3R0ExVUVDaE1WYld0alpYSjBJR1JsZG1Wc2IzQnRaVzUwSUVOQgpNU2t3SndZRFZRUUxEQ0IxWW5WdWRIVkFaWE51TFhOcmVXTnNkWE4wWlhJdE1TQW9WV0oxYm5SMUtURXdNQzRHCkExVUVBd3duYld0alpYSjBJSFZpZFc1MGRVQmxjMjR0YzJ0NVkyeDFjM1JsY2kweElDaFZZblZ1ZEhVcE1JSUIKb2pBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVk4QU1JSUJpZ0tDQVlFQXUvUjNDazZiUGtxcm9nUEUvaEl1WDM1Twp2L1FERFN5TUlDN0JxMlJXRmZ1ZUYzQTNFUEgwQVkweGRwMmhXS2gvT2JnYzhMeE5NbE1yY1l4bWptZkdnVGJuCll2U1hJZ0FJMjdaTENmbmpoSXFTbHlOY3FnaCtVenNwL2V3enRUWXVSRnpseTAxT29pcGJqTnJIRTY3WmdvNXoKTzZvY1VGK3ZaWC9EUk85ZGNEKzVIc2xIUkxWNnBBV2hyQ2ZDQ1lZSTlWTWpCMW9UMm5zTUkyWS8vTGNTNGJWRgozVndkeXVvZTcvZmk5b2d2QWU5b3dtbFBEOHdTdmV5dWhRL1hUb0NtUXAyWGdFM09EekFtU1FIOWFJbXJkNVhkCldNZnVkUXk0aFlVZWNQMUdON3JCdmdkcmZqQ1NMOXF3NzVNc3Y1T3FpN01WSmNtVWpFNVBpY0ZKODI0eCtZdUsKVXYzWlVnb0Z0bU5JYzB5NlY2V0ZlK1FXR2RPTEhKa2huMHNsQnFiR1lYdE9NVmRyalBld1YzYy9aKzRQTzNUNApZbzNrMUx2ODF5LzhDdVBjT2xWbk9JanN0ZUVycUpyODlsZll6TjVhSEVoNmFndTdLNGVHaHJMUTIxTkRWZWV5CnY2WUxDRC9QeVZTV0xIZEQ1YmhzMndnZkZUVlpMWUE2cXM0VGFoWDlBZ01CQUFHalJUQkRNQTRHQTFVZER3RUIKL3dRRUF3SUNCREFTQmdOVkhSTUJBZjhFQ0RBR0FRSC9BZ0VBTUIwR0ExVWREZ1FXQkJUL1lDZjNZbHBuK01seApPZ3ZnY1BGdEt6bEo3REFOQmdrcWhraUc5dzBCQVFzRkFBT0NBWUVBUnNaTGYxR1djZXJVcGt6dHM1QTlwRWhjCkdPbXlHM2JleUV1aFRtZmt4WVhURVpRWFM4MjJiK2dod0xKRXFERkcwUWhEdHlUYk1aMVhmemJNUUczV01PL0oKVjNibnY0UUEvYVJ0SmRvOHlHRUFqei9zMVloWGFFRy80S1A5N05zNWg4U2lickhrNHJpeHI4dGlTcFkrQzN5ZwptSzRNbmQyUVJpLzg5OW5ZaEN0RURzK3JDdUtyV1pXdS9hUjlNU1J3WlpmU3lDemllc3lkMnVNWHNpMFpidGJmCjFueHh5MjJ6QllLajl0UEIzVUhBQVh5UnVySlBScDRPUVE4bm5kTzk0dkxuYW9XOGJVMGQwWVAwUlRTQkpmZngKUGF1WjF6TlllcTRkNU16NzdrdlFJbDhqbFBRcyt4V2kyRFRVNm02M05iSTFEd2p3QkFmQWtHVXhYMkUwMWdOVApPNms3d3J3aUtXdWkxdGluQU1UL0VmVDMvVjlSRldKajlJOEV5WGQ4V1hROU9XYXZBSlNJWnNSZG1QMDRuYnRPClM3eHI0Z0dpamt1ZDJ3OC81MWJBU1Y2bXRoaVVvd1MweWEySmEzZzFITVY1TXJHclVYQWUxYkdMc1ZBUjlSZlUKa3hTcU95a0RRa2dnSktXM2syd3FxNUZJTmppclpvQ2xsSVhWcjR5cAotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+        url: https://172.17.0.1:9443/mutate-apps-v1-deployment
+      conversionReviewVersions:
+      - v1
+  group: core.skycluster-manager.savitestbed.ca
+  names:
+    kind: SkyApp
+    listKind: SkyAppList
+    plural: skyapps
+    singular: skyapp
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SkyApp is the Schema for the skyapps API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SkyAppSpec defines the desired state of SkyApp
+            properties:
+              foo:
+                description: Foo is an example field of SkyApp. Edit skyapp_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: SkyAppStatus defines the observed state of SkyApp
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: virtualservices.core.skycluster-manager.savitestbed.ca
+spec:
+  group: core.skycluster-manager.savitestbed.ca
+  names:
+    kind: VirtualService
+    listKind: VirtualServiceList
+    plural: virtualservices
+    singular: virtualservice
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: VirtualService is the Schema for the virtualservices API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: VirtualServiceSpec defines the desired state of VirtualService
+            properties:
+              foo:
+                description: Foo is an example field of VirtualService. Edit virtualservice_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: VirtualServiceStatus defines the observed state of VirtualService
             type: object
         type: object
     served: true
@@ -155,6 +335,156 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-provider-editor-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providers/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-provider-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providers/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-skyapp-editor-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyapps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyapps/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-skyapp-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyapps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyapps/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-virtualservice-editor-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - virtualservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - virtualservices/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-virtualservice-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - virtualservices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - virtualservices/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
   name: skycluster-manager-manager-role
 rules:
 - apiGroups:
@@ -179,6 +509,84 @@ rules:
   - core.skycluster-manager.savitestbed.ca
   resources:
   - ilptasks/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyapps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyapps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyapps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - virtualservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - virtualservices/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - virtualservices/status
   verbs:
   - get
   - patch
@@ -257,3 +665,28 @@ subjects:
 - kind: ServiceAccount
   name: skycluster-manager-controller-manager
   namespace: skycluster-manager-system
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: skycluster-manager-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUV5akNDQXpLZ0F3SUJBZ0lSQUtuT0tJRWpNdGdFWUVodkR5RnRRaEF3RFFZSktvWklodmNOQVFFTEJRQXcKZlRFZU1Cd0dBMVVFQ2hNVmJXdGpaWEowSUdSbGRtVnNiM0J0Wlc1MElFTkJNU2t3SndZRFZRUUxEQ0IxWW5WdQpkSFZBWlhOdUxYTnJlV05zZFhOMFpYSXRNU0FvVldKMWJuUjFLVEV3TUM0R0ExVUVBd3duYld0alpYSjBJSFZpCmRXNTBkVUJsYzI0dGMydDVZMngxYzNSbGNpMHhJQ2hWWW5WdWRIVXBNQjRYRFRJME1EZ3dNVEF4TlRneE1Wb1gKRFRNME1EZ3dNVEF4TlRneE1Wb3dmVEVlTUJ3R0ExVUVDaE1WYld0alpYSjBJR1JsZG1Wc2IzQnRaVzUwSUVOQgpNU2t3SndZRFZRUUxEQ0IxWW5WdWRIVkFaWE51TFhOcmVXTnNkWE4wWlhJdE1TQW9WV0oxYm5SMUtURXdNQzRHCkExVUVBd3duYld0alpYSjBJSFZpZFc1MGRVQmxjMjR0YzJ0NVkyeDFjM1JsY2kweElDaFZZblZ1ZEhVcE1JSUIKb2pBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVk4QU1JSUJpZ0tDQVlFQXUvUjNDazZiUGtxcm9nUEUvaEl1WDM1Twp2L1FERFN5TUlDN0JxMlJXRmZ1ZUYzQTNFUEgwQVkweGRwMmhXS2gvT2JnYzhMeE5NbE1yY1l4bWptZkdnVGJuCll2U1hJZ0FJMjdaTENmbmpoSXFTbHlOY3FnaCtVenNwL2V3enRUWXVSRnpseTAxT29pcGJqTnJIRTY3WmdvNXoKTzZvY1VGK3ZaWC9EUk85ZGNEKzVIc2xIUkxWNnBBV2hyQ2ZDQ1lZSTlWTWpCMW9UMm5zTUkyWS8vTGNTNGJWRgozVndkeXVvZTcvZmk5b2d2QWU5b3dtbFBEOHdTdmV5dWhRL1hUb0NtUXAyWGdFM09EekFtU1FIOWFJbXJkNVhkCldNZnVkUXk0aFlVZWNQMUdON3JCdmdkcmZqQ1NMOXF3NzVNc3Y1T3FpN01WSmNtVWpFNVBpY0ZKODI0eCtZdUsKVXYzWlVnb0Z0bU5JYzB5NlY2V0ZlK1FXR2RPTEhKa2huMHNsQnFiR1lYdE9NVmRyalBld1YzYy9aKzRQTzNUNApZbzNrMUx2ODF5LzhDdVBjT2xWbk9JanN0ZUVycUpyODlsZll6TjVhSEVoNmFndTdLNGVHaHJMUTIxTkRWZWV5CnY2WUxDRC9QeVZTV0xIZEQ1YmhzMndnZkZUVlpMWUE2cXM0VGFoWDlBZ01CQUFHalJUQkRNQTRHQTFVZER3RUIKL3dRRUF3SUNCREFTQmdOVkhSTUJBZjhFQ0RBR0FRSC9BZ0VBTUIwR0ExVWREZ1FXQkJUL1lDZjNZbHBuK01seApPZ3ZnY1BGdEt6bEo3REFOQmdrcWhraUc5dzBCQVFzRkFBT0NBWUVBUnNaTGYxR1djZXJVcGt6dHM1QTlwRWhjCkdPbXlHM2JleUV1aFRtZmt4WVhURVpRWFM4MjJiK2dod0xKRXFERkcwUWhEdHlUYk1aMVhmemJNUUczV01PL0oKVjNibnY0UUEvYVJ0SmRvOHlHRUFqei9zMVloWGFFRy80S1A5N05zNWg4U2lickhrNHJpeHI4dGlTcFkrQzN5ZwptSzRNbmQyUVJpLzg5OW5ZaEN0RURzK3JDdUtyV1pXdS9hUjlNU1J3WlpmU3lDemllc3lkMnVNWHNpMFpidGJmCjFueHh5MjJ6QllLajl0UEIzVUhBQVh5UnVySlBScDRPUVE4bm5kTzk0dkxuYW9XOGJVMGQwWVAwUlRTQkpmZngKUGF1WjF6TlllcTRkNU16NzdrdlFJbDhqbFBRcyt4V2kyRFRVNm02M05iSTFEd2p3QkFmQWtHVXhYMkUwMWdOVApPNms3d3J3aUtXdWkxdGluQU1UL0VmVDMvVjlSRldKajlJOEV5WGQ4V1hROU9XYXZBSlNJWnNSZG1QMDRuYnRPClM3eHI0Z0dpamt1ZDJ3OC81MWJBU1Y2bXRoaVVvd1MweWEySmEzZzFITVY1TXJHclVYQWUxYkdMc1ZBUjlSZlUKa3hTcU95a0RRa2dnSktXM2syd3FxNUZJTmppclpvQ2xsSVhWcjR5cAotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    url: https://172.17.0.1:9443/mutate-apps-v1-deployment
+  failurePolicy: Fail
+  name: mdeployment.kb.io
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - deployments
+  sideEffects: None

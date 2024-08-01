@@ -23,45 +23,42 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ILPTaskSpec defines the desired state of ILPTask
-type ILPTaskSpec struct {
+// SkyAppSpec defines the desired state of SkyApp
+type SkyAppSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of ILPTask. Edit ilptask_types.go to remove/update
-	ProblemDefinition string `json:"problemDefinition"`
+	// Foo is an example field of SkyApp. Edit skyapp_types.go to remove/update
+	Foo string `json:"foo,omitempty"`
 }
 
-// ILPTaskStatus defines the observed state of ILPTask
-type ILPTaskStatus struct {
+// SkyAppStatus defines the observed state of SkyApp
+type SkyAppStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	Result   string `json:"result"`
-	Solution string `json:"solution"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// ILPTask is the Schema for the ilptasks API
-type ILPTask struct {
+// SkyApp is the Schema for the skyapps API
+type SkyApp struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ILPTaskSpec   `json:"spec,omitempty"`
-	Status ILPTaskStatus `json:"status,omitempty"`
+	Spec   SkyAppSpec   `json:"spec,omitempty"`
+	Status SkyAppStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// ILPTaskList contains a list of ILPTask
-type ILPTaskList struct {
+// SkyAppList contains a list of SkyApp
+type SkyAppList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ILPTask `json:"items"`
+	Items           []SkyApp `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ILPTask{}, &ILPTaskList{})
+	SchemeBuilder.Register(&SkyApp{}, &SkyAppList{})
 }

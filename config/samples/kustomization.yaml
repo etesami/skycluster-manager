@@ -1,4 +1,7 @@
 ## Append samples of your project ##
 resources:
 - core_v1alpha1_ilptask.yaml
+- core_v1alpha1_provider.yaml
+- core_v1alpha1_virtualservice.yaml
+- core_v1alpha1_skyapp.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

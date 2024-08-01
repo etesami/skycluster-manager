@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: ilptasks.core.skycluster-manager.savitestbed.ca
+  name: virtualservices.core.skycluster-manager.savitestbed.ca
 spec:
   group: core.skycluster-manager.savitestbed.ca
   names:
-    kind: ILPTask
-    listKind: ILPTaskList
-    plural: ilptasks
-    singular: ilptask
+    kind: VirtualService
+    listKind: VirtualServiceList
+    plural: virtualservices
+    singular: virtualservice
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ILPTask is the Schema for the ilptasks API
+        description: VirtualService is the Schema for the virtualservices API
         properties:
           apiVersion:
             description: |-
@@ -37,25 +37,15 @@ spec:
           metadata:
             type: object
           spec:
-            description: ILPTaskSpec defines the desired state of ILPTask
+            description: VirtualServiceSpec defines the desired state of VirtualService
             properties:
-              problemDefinition:
-                description: Foo is an example field of ILPTask. Edit ilptask_types.go
+              foo:
+                description: Foo is an example field of VirtualService. Edit virtualservice_types.go
                   to remove/update
                 type: string
-            required:
-            - problemDefinition
             type: object
           status:
-            description: ILPTaskStatus defines the observed state of ILPTask
-            properties:
-              result:
-                type: string
-              solution:
-                type: string
-            required:
-            - result
-            - solution
+            description: VirtualServiceStatus defines the observed state of VirtualService
             type: object
         type: object
     served: true
