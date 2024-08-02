@@ -1,0 +1,92 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: SkyApp
+metadata:
+  name: skyapp-sample
+spec:
+  appName: my-skyapp1
+  namespace: default
+  appConfig:
+    - name: frontend
+      constraints:
+        locationConstraints:
+          - providerName: aws-east1 # aws-west1, gcp-east1
+          - region: east # east, west, north, south
+          - providerType: edge # near-the-edge, Cloud
+        virtualServiceConstraints:
+          - virtualServiceName: vs1
+    - name: backend
+      constraints:
+        locationConstraints:
+          - providerName: aws-east1
+        virtualServiceConstraints:
+          - virtualServiceName: vs1
+    - name: payment
+      constraints:
+        locationConstraints:
+          - providerName: aws-east1
+        virtualServiceConstraints:
+          - virtualServiceName: vs1
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: DataflowAttribute
+metadata:
+  name: dataflow-sample
+spec:
+  appName: my-skyapp1
+  connections:
+    - source: frontend
+      destinations:
+        - name: backend
+          constraints:
+            latency: 10ms
+    - source: backend
+      destinations:
+        - name: payment
+          constraints:
+            latency: 10ms
+---
+# ################ VIRTUAL SERVICES ################
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: VirtualService
+metadata:
+  name: virtualservice-sample
+spec:
+  name: vs1
+---
+# ################ PROVIDERS ################
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: Provider
+metadata:
+  name: provider-aws-east
+spec:
+  name: aws
+  region: east
+  zone: default
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: Provider
+metadata:
+  name: provider-aws-west
+spec:
+  name: aws
+  region: west
+  zone: default
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattribute-sample
+spec:
+  providerName: aws-east1
+  latencyMap:
+    - dstProviderName: provider-aws-west
+      latency: 10ms
+---
+# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+# kind: ILPTask
+# metadata:
+#   name: ilptask-sample
+# spec:
+#   problemDefinition: |
+#     import numpy as np
+# ---

@@ -1,0 +1,23 @@
+# permissions for end users to view providerlatencymaps.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: skycluster-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: core-providerlatencymap-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerlatencymaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerlatencymaps/status
+  verbs:
+  - get

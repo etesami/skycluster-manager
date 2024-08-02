@@ -6,6 +6,8 @@ resources:
 - bases/core.skycluster-manager.savitestbed.ca_providers.yaml
 - bases/core.skycluster-manager.savitestbed.ca_virtualservices.yaml
 - bases/core.skycluster-manager.savitestbed.ca_skyapps.yaml
+- bases/core.skycluster-manager.savitestbed.ca_providerattributes.yaml
+- bases/core.skycluster-manager.savitestbed.ca_dataflowattributes.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:
@@ -20,6 +22,8 @@ patches:
 #- path: patches/cainjection_in_core_providers.yaml
 #- path: patches/cainjection_in_core_virtualservices.yaml
 #- path: patches/cainjection_in_core_skyapps.yaml
+#- path: patches/cainjection_in_core_providerattributes.yaml
+#- path: patches/cainjection_in_policy_dataflowattributes.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # [WEBHOOK] To enable webhook, uncomment the following section

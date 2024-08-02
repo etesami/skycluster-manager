@@ -23,38 +23,31 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type LocationConstraints struct {
-	ProviderName string `json:"providerName,omitempty"`
-	Region       string `json:"region,omitempty"`
-	ProviderType string `json:"providerType,omitempty"`
+type DataflowDestConstraints struct {
+	Latency string `json:"latency"`
 }
 
-type VirtualServiceConstraints struct {
-	VirtualServiceName string `json:"virtualServiceName"`
+type DataflowDestinations struct {
+	Name        string                    `json:"name"`
+	Constraints []DataflowDestConstraints `json:"constraints,omitempty"`
 }
 
-type AppConstranints struct {
-	LocationConstraints       []LocationConstraints       `json:"locationConstraints,omitempty"`
-	VirtualServiceConstraints []VirtualServiceConstraints `json:"virtualServiceConstraints,omitempty"`
+type DataflowConnections struct {
+	Source       string                 `json:"source"`
+	Destinations []DataflowDestinations `json:"destinations"`
 }
 
-type AppConfigDetail struct {
-	Name        string            `json:"name"`
-	Constraints []AppConstranints `json:"constraints"`
-}
-
-// SkyAppSpec defines the desired state of SkyApp
-type SkyAppSpec struct {
+// DataflowAttributeSpec defines the desired state of DataflowAttribute
+type DataflowAttributeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	AppName   string            `json:"appName"`
-	Namespace string            `json:"namespace"`
-	AppConfig []AppConfigDetail `json:"appConfig"`
+	AppName     string                `json:"appName"`
+	Connections []DataflowConnections `json:"connections"`
 }
 
-// SkyAppStatus defines the observed state of SkyApp
-type SkyAppStatus struct {
+// DataflowAttributeStatus defines the observed state of DataflowAttribute
+type DataflowAttributeStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -62,24 +55,24 @@ type SkyAppStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// SkyApp is the Schema for the skyapps API
-type SkyApp struct {
+// DataflowAttribute is the Schema for the dataflowattributes API
+type DataflowAttribute struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SkyAppSpec   `json:"spec,omitempty"`
-	Status SkyAppStatus `json:"status,omitempty"`
+	Spec   DataflowAttributeSpec   `json:"spec,omitempty"`
+	Status DataflowAttributeStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// SkyAppList contains a list of SkyApp
-type SkyAppList struct {
+// DataflowAttributeList contains a list of DataflowAttribute
+type DataflowAttributeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SkyApp `json:"items"`
+	Items           []DataflowAttribute `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SkyApp{}, &SkyAppList{})
+	SchemeBuilder.Register(&DataflowAttribute{}, &DataflowAttributeList{})
 }

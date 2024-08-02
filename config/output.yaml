@@ -3,6 +3,89 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
+  name: dataflowattributes.core.skycluster-manager.savitestbed.ca
+spec:
+  group: core.skycluster-manager.savitestbed.ca
+  names:
+    kind: DataflowAttribute
+    listKind: DataflowAttributeList
+    plural: dataflowattributes
+    singular: dataflowattribute
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DataflowAttribute is the Schema for the dataflowattributes API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DataflowAttributeSpec defines the desired state of DataflowAttribute
+            properties:
+              appName:
+                type: string
+              connections:
+                items:
+                  properties:
+                    destinations:
+                      items:
+                        properties:
+                          constraints:
+                            items:
+                              properties:
+                                latency:
+                                  type: string
+                              required:
+                              - latency
+                              type: object
+                            type: array
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      type: array
+                    source:
+                      type: string
+                  required:
+                  - destinations
+                  - source
+                  type: object
+                type: array
+            required:
+            - appName
+            - connections
+            type: object
+          status:
+            description: DataflowAttributeStatus defines the observed state of DataflowAttribute
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: ilptasks.core.skycluster-manager.savitestbed.ca
 spec:
   group: core.skycluster-manager.savitestbed.ca
@@ -67,6 +150,67 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
+  name: providerattributes.core.skycluster-manager.savitestbed.ca
+spec:
+  group: core.skycluster-manager.savitestbed.ca
+  names:
+    kind: ProviderAttribute
+    listKind: ProviderAttributeList
+    plural: providerattributes
+    singular: providerattribute
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ProviderAttribute is the Schema for the providerattributes API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ProviderAttributeSpec defines the desired state of ProviderAttribute
+            properties:
+              latencyMap:
+                items:
+                  properties:
+                    dstProviderName:
+                      type: string
+                    latency:
+                      type: string
+                  type: object
+                type: array
+              providerName:
+                type: string
+            type: object
+          status:
+            description: ProviderAttributeStatus defines the observed state of ProviderAttribute
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: providers.core.skycluster-manager.savitestbed.ca
 spec:
   group: core.skycluster-manager.savitestbed.ca
@@ -102,10 +246,18 @@ spec:
           spec:
             description: ProviderSpec defines the desired state of Provider
             properties:
-              foo:
+              name:
                 description: Foo is an example field of Provider. Edit provider_types.go
                   to remove/update
                 type: string
+              region:
+                type: string
+              zone:
+                type: string
+            required:
+            - name
+            - region
+            - zone
             type: object
           status:
             description: ProviderStatus defines the observed state of Provider
@@ -164,10 +316,49 @@ spec:
           spec:
             description: SkyAppSpec defines the desired state of SkyApp
             properties:
-              foo:
-                description: Foo is an example field of SkyApp. Edit skyapp_types.go
-                  to remove/update
+              appConfig:
+                items:
+                  properties:
+                    constraints:
+                      items:
+                        properties:
+                          locationConstraints:
+                            items:
+                              properties:
+                                providerName:
+                                  type: string
+                                providerType:
+                                  type: string
+                                region:
+                                  type: string
+                              type: object
+                            type: array
+                          virtualServiceConstraints:
+                            items:
+                              properties:
+                                virtualServiceName:
+                                  type: string
+                              required:
+                              - virtualServiceName
+                              type: object
+                            type: array
+                        type: object
+                      type: array
+                    name:
+                      type: string
+                  required:
+                  - constraints
+                  - name
+                  type: object
+                type: array
+              appName:
                 type: string
+              namespace:
+                type: string
+            required:
+            - appConfig
+            - appName
+            - namespace
             type: object
           status:
             description: SkyAppStatus defines the observed state of SkyApp
@@ -218,10 +409,10 @@ spec:
           spec:
             description: VirtualServiceSpec defines the desired state of VirtualService
             properties:
-              foo:
-                description: Foo is an example field of VirtualService. Edit virtualservice_types.go
-                  to remove/update
+              name:
                 type: string
+            required:
+            - name
             type: object
           status:
             description: VirtualServiceStatus defines the observed state of VirtualService
@@ -281,6 +472,56 @@ rules:
   verbs:
   - create
   - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-dataflow-editor-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflows/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-dataflow-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflows
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflows/status
+  verbs:
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -379,6 +620,106 @@ rules:
   - core.skycluster-manager.savitestbed.ca
   resources:
   - providers/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-providerattribute-editor-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerattributes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerattributes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-providerattribute-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerattributes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerattributes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-providerlatencymap-editor-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerlatencymaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerlatencymaps/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-providerlatencymap-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerlatencymaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerlatencymaps/status
   verbs:
   - get
 ---
@@ -516,6 +857,32 @@ rules:
 - apiGroups:
   - core.skycluster-manager.savitestbed.ca
   resources:
+  - providerattributes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerattributes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerattributes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
   - providers
   verbs:
   - create
@@ -591,6 +958,32 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes/status
+  verbs:
+  - get
+  - patch
+  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -617,6 +1010,106 @@ metadata:
 rules:
 - nonResourceURLs:
   - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-policy-dataflowattribute-editor-role
+rules:
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-policy-dataflowattribute-viewer-role
+rules:
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-policy-dataflowconstraint-editor-role
+rules:
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowconstraints
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowconstraints/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-policy-dataflowconstraint-viewer-role
+rules:
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowconstraints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowconstraints/status
   verbs:
   - get
 ---

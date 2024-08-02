@@ -1,0 +1,23 @@
+# permissions for end users to view dataflowconstraints.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: skycluster-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: policy-dataflowconstraint-viewer-role
+rules:
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowconstraints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowconstraints/status
+  verbs:
+  - get

@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: virtualservices.core.skycluster-manager.savitestbed.ca
+  name: providerattributes.core.skycluster-manager.savitestbed.ca
 spec:
   group: core.skycluster-manager.savitestbed.ca
   names:
-    kind: VirtualService
-    listKind: VirtualServiceList
-    plural: virtualservices
-    singular: virtualservice
+    kind: ProviderAttribute
+    listKind: ProviderAttributeList
+    plural: providerattributes
+    singular: providerattribute
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: VirtualService is the Schema for the virtualservices API
+        description: ProviderAttribute is the Schema for the providerattributes API
         properties:
           apiVersion:
             description: |-
@@ -37,15 +37,22 @@ spec:
           metadata:
             type: object
           spec:
-            description: VirtualServiceSpec defines the desired state of VirtualService
+            description: ProviderAttributeSpec defines the desired state of ProviderAttribute
             properties:
-              name:
+              latencyMap:
+                items:
+                  properties:
+                    dstProviderName:
+                      type: string
+                    latency:
+                      type: string
+                  type: object
+                type: array
+              providerName:
                 type: string
-            required:
-            - name
             type: object
           status:
-            description: VirtualServiceStatus defines the observed state of VirtualService
+            description: ProviderAttributeStatus defines the observed state of ProviderAttribute
             type: object
         type: object
     served: true

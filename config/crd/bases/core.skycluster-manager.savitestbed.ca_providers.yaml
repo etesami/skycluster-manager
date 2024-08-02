@@ -39,10 +39,18 @@ spec:
           spec:
             description: ProviderSpec defines the desired state of Provider
             properties:
-              foo:
+              name:
                 description: Foo is an example field of Provider. Edit provider_types.go
                   to remove/update
                 type: string
+              region:
+                type: string
+              zone:
+                type: string
+            required:
+            - name
+            - region
+            - zone
             type: object
           status:
             description: ProviderStatus defines the observed state of Provider

@@ -1,0 +1,165 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ex-app-token-auth
+  annotations:
+    managed-by: skythiscluster
+    skyappname: my-skyapp1
+  labels:
+    app: sampleapp
+data:
+  token: "SECRET_TOKEN_VALUE"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ex-app-token-unauth
+  annotations:
+    managed-by: skythiscluster
+    skyappname: my-skyapp1
+  labels:
+    app: sampleapp
+data:
+  token: "CUSTOM"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  annotations:
+    managed-by: skythiscluster
+    skyappname: my-skyapp1
+  labels:
+    app: sampleapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: frontend:1.0
+        ports:
+        - containerPort: 5000
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+          - name: TOKEN
+            valueFrom:
+              configMapKeyRef:
+                name: ex-app-token-auth
+                key: token
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  annotations:
+    managed-by: skythiscluster
+    skyappname: my-skyapp1
+  labels:
+    app: sampleapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: backend:1.0
+        ports:
+        - containerPort: 5000
+        # livenessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 5000
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment
+  annotations:
+    managed-by: skythiscluster
+    skyappname: my-skyapp1
+  labels:
+    app: sampleapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment
+  template:
+    metadata:
+      labels:
+        app: payment
+    spec:
+      containers:
+      - name: payment
+        image: payment:1.0
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  annotations:
+    managed-by: skythiscluster
+    skyappname: my-skyapp1
+  labels:
+    app: sampleapp
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  annotations:
+    managed-by: skythiscluster
+    skyappname: my-skyapp1
+  labels:
+    app: sampleapp
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 80
+    targetPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment
+  annotations:
+    managed-by: skythiscluster
+    skyappname: my-skyapp1
+  labels:
+    app: sampleapp
+spec:
+  selector:
+    app: payment
+  ports:
+  - port: 80
+    targetPort: 5000

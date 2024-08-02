@@ -4,4 +4,9 @@ resources:
 - core_v1alpha1_provider.yaml
 - core_v1alpha1_virtualservice.yaml
 - core_v1alpha1_skyapp.yaml
+- core_v1alpha1_dataflow.yaml
+- policy_v1alpha1_dataflowconstraint.yaml
+- core_v1alpha1_providerlatencymap.yaml
+- core_v1alpha1_providerattribute.yaml
+- policy_v1alpha1_dataflowattribute.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

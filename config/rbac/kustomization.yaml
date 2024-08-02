@@ -22,6 +22,16 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the Project itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- policy_dataflowattribute_editor_role.yaml
+- policy_dataflowattribute_viewer_role.yaml
+- core_providerattribute_editor_role.yaml
+- core_providerattribute_viewer_role.yaml
+- core_providerlatencymap_editor_role.yaml
+- core_providerlatencymap_viewer_role.yaml
+- policy_dataflowconstraint_editor_role.yaml
+- policy_dataflowconstraint_viewer_role.yaml
+- core_dataflow_editor_role.yaml
+- core_dataflow_viewer_role.yaml
 - core_skyapp_editor_role.yaml
 - core_skyapp_viewer_role.yaml
 - core_virtualservice_editor_role.yaml

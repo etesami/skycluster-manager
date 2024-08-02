@@ -48,4 +48,49 @@ resources:
   webhooks:
     conversion: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: skycluster-manager.savitestbed.ca
+  group: core
+  kind: Dataflow
+  path: github.com/etesami/skycluster-manager/api/core/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: skycluster-manager.savitestbed.ca
+  group: policy
+  kind: DataflowConstraint
+  path: github.com/etesami/skycluster-manager/api/policy/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: skycluster-manager.savitestbed.ca
+  group: core
+  kind: ProviderLatencyMap
+  path: github.com/etesami/skycluster-manager/api/core/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: skycluster-manager.savitestbed.ca
+  group: core
+  kind: ProviderAttribute
+  path: github.com/etesami/skycluster-manager/api/core/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: skycluster-manager.savitestbed.ca
+  group: policy
+  kind: DataflowAttribute
+  path: github.com/etesami/skycluster-manager/api/policy/v1alpha1
+  version: v1alpha1
 version: "3"

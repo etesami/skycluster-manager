@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: skyapps.core.skycluster-manager.savitestbed.ca
+  name: dataflowattributes.core.skycluster-manager.savitestbed.ca
 spec:
   group: core.skycluster-manager.savitestbed.ca
   names:
-    kind: SkyApp
-    listKind: SkyAppList
-    plural: skyapps
-    singular: skyapp
+    kind: DataflowAttribute
+    listKind: DataflowAttributeList
+    plural: dataflowattributes
+    singular: dataflowattribute
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: SkyApp is the Schema for the skyapps API
+        description: DataflowAttribute is the Schema for the dataflowattributes API
         properties:
           apiVersion:
             description: |-
@@ -37,54 +37,44 @@ spec:
           metadata:
             type: object
           spec:
-            description: SkyAppSpec defines the desired state of SkyApp
+            description: DataflowAttributeSpec defines the desired state of DataflowAttribute
             properties:
-              appConfig:
-                items:
-                  properties:
-                    constraints:
-                      items:
-                        properties:
-                          locationConstraints:
-                            items:
-                              properties:
-                                providerName:
-                                  type: string
-                                providerType:
-                                  type: string
-                                region:
-                                  type: string
-                              type: object
-                            type: array
-                          virtualServiceConstraints:
-                            items:
-                              properties:
-                                virtualServiceName:
-                                  type: string
-                              required:
-                              - virtualServiceName
-                              type: object
-                            type: array
-                        type: object
-                      type: array
-                    name:
-                      type: string
-                  required:
-                  - constraints
-                  - name
-                  type: object
-                type: array
               appName:
                 type: string
-              namespace:
-                type: string
+              connections:
+                items:
+                  properties:
+                    destinations:
+                      items:
+                        properties:
+                          constraints:
+                            items:
+                              properties:
+                                latency:
+                                  type: string
+                              required:
+                              - latency
+                              type: object
+                            type: array
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      type: array
+                    source:
+                      type: string
+                  required:
+                  - destinations
+                  - source
+                  type: object
+                type: array
             required:
-            - appConfig
             - appName
-            - namespace
+            - connections
             type: object
           status:
-            description: SkyAppStatus defines the observed state of SkyApp
+            description: DataflowAttributeStatus defines the observed state of DataflowAttribute
             type: object
         type: object
     served: true

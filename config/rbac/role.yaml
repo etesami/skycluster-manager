@@ -33,6 +33,32 @@ rules:
 - apiGroups:
   - core.skycluster-manager.savitestbed.ca
   resources:
+  - providerattributes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerattributes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - providerattributes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
   - providers
   verbs:
   - create
@@ -104,6 +130,32 @@ rules:
   - core.skycluster-manager.savitestbed.ca
   resources:
   - virtualservices/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - policy.skycluster-manager.savitestbed.ca
+  resources:
+  - dataflowattributes/status
   verbs:
   - get
   - patch

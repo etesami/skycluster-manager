@@ -6,7 +6,6 @@ metadata:
     managed-by: skycluster
   labels:
     app: nginx
-    managed-by: skycluster
 spec:
   replicas: 3
   selector:

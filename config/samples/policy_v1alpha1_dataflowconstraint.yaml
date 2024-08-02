@@ -1,0 +1,9 @@
+apiVersion: policy.skycluster-manager.savitestbed.ca/v1alpha1
+kind: DataflowConstraint
+metadata:
+  labels:
+    app.kubernetes.io/name: skycluster-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: dataflowconstraint-sample
+spec:
+  # TODO(user): Add fields here
