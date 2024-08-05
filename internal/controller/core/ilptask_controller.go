@@ -31,6 +31,7 @@ import (
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
@@ -46,6 +47,8 @@ type ILPTaskReconciler struct {
 // +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=ilptasks,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=ilptasks/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=ilptasks/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=skyapp,verbs=create;update;patch;delete
+// +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=dataflowattribute,verbs=create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -60,7 +63,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log := log.FromContext(ctx)
 
 	// print the name and namespace of the ILPTask
-	log.Info("Reconciling ILPTask", "name", req.Name, "namespace", req.Namespace)
+	log.Info("Reconciling ILPTask ["+req.Name+"]", "name", req.Name, "namespace", req.Namespace)
 
 	// Fetch the ILPTask instance
 	ilptask := &corev1alpha1.ILPTask{}
@@ -199,5 +202,13 @@ func (r *ILPTaskReconciler) getPodLogs(ctx context.Context, pod *corev1.Pod) (st
 func (r *ILPTaskReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1alpha1.ILPTask{}).
+		Watches(
+			&corev1alpha1.DataflowAttribute{},
+			&handler.EnqueueRequestForObject{},
+		).
+		Watches(
+			&corev1alpha1.SkyApp{},
+			&handler.EnqueueRequestForObject{},
+		).
 		Complete(r)
 }

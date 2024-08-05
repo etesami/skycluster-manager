@@ -39,8 +39,8 @@ type AppConstranints struct {
 }
 
 type AppConfigDetail struct {
-	Name        string            `json:"name"`
-	Constraints []AppConstranints `json:"constraints"`
+	Name        string          `json:"name"`
+	Constraints AppConstranints `json:"constraints"`
 }
 
 // SkyAppSpec defines the desired state of SkyApp

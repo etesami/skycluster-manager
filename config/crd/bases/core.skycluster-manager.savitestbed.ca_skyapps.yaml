@@ -43,30 +43,28 @@ spec:
                 items:
                   properties:
                     constraints:
-                      items:
-                        properties:
-                          locationConstraints:
-                            items:
-                              properties:
-                                providerName:
-                                  type: string
-                                providerType:
-                                  type: string
-                                region:
-                                  type: string
-                              type: object
-                            type: array
-                          virtualServiceConstraints:
-                            items:
-                              properties:
-                                virtualServiceName:
-                                  type: string
-                              required:
-                              - virtualServiceName
-                              type: object
-                            type: array
-                        type: object
-                      type: array
+                      properties:
+                        locationConstraints:
+                          items:
+                            properties:
+                              providerName:
+                                type: string
+                              providerType:
+                                type: string
+                              region:
+                                type: string
+                            type: object
+                          type: array
+                        virtualServiceConstraints:
+                          items:
+                            properties:
+                              virtualServiceName:
+                                type: string
+                            required:
+                            - virtualServiceName
+                            type: object
+                          type: array
+                      type: object
                     name:
                       type: string
                   required:

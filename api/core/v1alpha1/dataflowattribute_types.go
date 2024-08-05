@@ -28,8 +28,8 @@ type DataflowDestConstraints struct {
 }
 
 type DataflowDestinations struct {
-	Name        string                    `json:"name"`
-	Constraints []DataflowDestConstraints `json:"constraints,omitempty"`
+	Name        string                  `json:"name"`
+	Constraints DataflowDestConstraints `json:"constraints,omitempty"`
 }
 
 type DataflowConnections struct {

@@ -72,6 +72,7 @@ spec:
   region: west
   zone: default
 ---
+# ################ ProviderAttribute ################
 apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 kind: ProviderAttribute
 metadata:

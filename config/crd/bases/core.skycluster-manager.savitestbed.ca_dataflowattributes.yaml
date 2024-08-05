@@ -48,14 +48,12 @@ spec:
                       items:
                         properties:
                           constraints:
-                            items:
-                              properties:
-                                latency:
-                                  type: string
-                              required:
-                              - latency
-                              type: object
-                            type: array
+                            properties:
+                              latency:
+                                type: string
+                            required:
+                            - latency
+                            type: object
                           name:
                             type: string
                         required:
