@@ -19,9 +19,11 @@ package core
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
@@ -47,9 +49,64 @@ type SkyAppReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
+	log.Info("SkyApp [" + req.Name + "] Reconciler started")
 
-	// TODO(user): your logic here
+	skyapp := &corev1alpha1.SkyApp{}
+	err := r.Get(ctx, req.NamespacedName, skyapp)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("SkyApp [" + req.Name + "] not found. Why?")
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "Unable to fetch ["+req.Name+"]")
+	}
+
+	// Check if ILPTask exists, if not create it
+	// Update the object with reference to skyapp object
+
+	ilptask := &corev1alpha1.ILPTask{}
+	err = r.Get(ctx, client.ObjectKey{
+		Namespace: skyapp.Namespace,
+		Name:      skyapp.Spec.AppName,
+	}, ilptask)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("SkyApp [" + skyapp.Spec.AppName + "] ilptask not found. Creating it...")
+			ilptask.Spec.AppName = skyapp.Spec.AppName
+			ilptask.ObjectMeta.Name = skyapp.Spec.AppName
+			ilptask.ObjectMeta.Namespace = skyapp.Namespace
+			ilptask.Spec.ProblemDefinition = "import time; print('Optimizer running...'); time.sleep(5); print('Optimizer completed')"
+			ilptask.Spec.SkyAppRef.Name = skyapp.Name
+			ilptask.Spec.SkyAppRef.Namespace = skyapp.Namespace
+			if err = controllerutil.SetControllerReference(skyapp, ilptask, r.Scheme); err != nil {
+				log.Error(err, "Failed to set controller reference for ILPTask ["+skyapp.Spec.AppName+"]")
+				return ctrl.Result{}, err
+			}
+			err = r.Create(ctx, ilptask)
+			if err != nil {
+				log.Error(err, "Failed to create ILPTask ["+skyapp.Spec.AppName+"]")
+				return ctrl.Result{}, err
+			}
+			// log.Info("SkyApp [" + skyapp.Spec.AppName + "] created successfully")
+		} else {
+			log.Error(err, "Failed to fetch ILPTask ["+skyapp.Spec.AppName+"]")
+			return ctrl.Result{}, err
+		}
+	} else {
+		// Update the object with reference to skyapp object
+		ilptask.Spec.SkyAppRef.Name = skyapp.Name
+		ilptask.Spec.SkyAppRef.Namespace = skyapp.Namespace
+		if err = controllerutil.SetControllerReference(skyapp, ilptask, r.Scheme); err != nil {
+			log.Error(err, "Failed to set controller reference for ILPTask ["+skyapp.Spec.AppName+"]")
+			return ctrl.Result{}, err
+		}
+		err = r.Update(ctx, ilptask)
+		if err != nil {
+			log.Error(err, "Failed to update ILPTask ["+skyapp.Spec.AppName+"]")
+			return ctrl.Result{}, err
+		}
+	}
 
 	return ctrl.Result{}, nil
 }

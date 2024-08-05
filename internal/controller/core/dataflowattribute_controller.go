@@ -19,12 +19,13 @@ package core
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	policyv1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
+	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
 )
 
 // DataflowAttributeReconciler reconciles a DataflowAttribute object
@@ -47,9 +48,56 @@ type DataflowAttributeReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *DataflowAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
+	log.Info("DataflowAttr [" + req.Name + "] Reconciler started")
 
-	// TODO(user): your logic here
+	dataflowattr := &corev1alpha1.DataflowAttribute{}
+	err := r.Get(ctx, req.NamespacedName, dataflowattr)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("DataflowAttr [" + req.Name + "] not found. Why?")
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "Unable to fetch ["+req.Name+"]")
+	}
+
+	// Check if ILPTask exists, if not create it
+	// Update the object with reference to dataflowattr object
+
+	ilptask := &corev1alpha1.ILPTask{}
+	err = r.Get(ctx, client.ObjectKey{
+		Namespace: dataflowattr.Namespace,
+		Name:      dataflowattr.Spec.AppName,
+	}, ilptask)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("DataflowAttr [" + dataflowattr.Spec.AppName + "] not found. Creating it...")
+			ilptask.ObjectMeta.Name = dataflowattr.Spec.AppName
+			ilptask.ObjectMeta.Namespace = dataflowattr.Namespace
+			ilptask.Spec.AppName = dataflowattr.Spec.AppName
+			ilptask.Spec.ProblemDefinition = "import time; print('Optimizer running...'); time.sleep(5); print('Optimizer completed')"
+			ilptask.Spec.DataflowAttributeRef.Name = dataflowattr.Name
+			ilptask.Spec.DataflowAttributeRef.Namespace = dataflowattr.Namespace
+			err = r.Create(ctx, ilptask)
+			if err != nil {
+				log.Error(err, "Failed to create ILPTask ["+dataflowattr.Spec.AppName+"]")
+				return ctrl.Result{}, err
+			}
+			log.Info("DataflowAttr [" + dataflowattr.Spec.AppName + "] created successfully")
+		} else {
+			log.Error(err, "Failed to fetch ILPTask ["+dataflowattr.Spec.AppName+"]")
+			return ctrl.Result{}, err
+		}
+	} else {
+		// Update the object with reference to dataflowattr object
+		ilptask.Spec.DataflowAttributeRef.Name = dataflowattr.Name
+		ilptask.Spec.DataflowAttributeRef.Namespace = dataflowattr.Namespace
+		err = r.Update(ctx, ilptask)
+		if err != nil {
+			log.Error(err, "Failed to update ILPTask ["+dataflowattr.Spec.AppName+"]")
+			return ctrl.Result{}, err
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -57,6 +105,6 @@ func (r *DataflowAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 // SetupWithManager sets up the controller with the Manager.
 func (r *DataflowAttributeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&policyv1alpha1.DataflowAttribute{}).
+		For(&corev1alpha1.DataflowAttribute{}).
 		Complete(r)
 }

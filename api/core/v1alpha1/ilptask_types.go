@@ -23,13 +23,26 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type DataflowAttributeRef struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
+
+type SkyAppRef struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
+
 // ILPTaskSpec defines the desired state of ILPTask
 type ILPTaskSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of ILPTask. Edit ilptask_types.go to remove/update
-	ProblemDefinition string `json:"problemDefinition"`
+	AppName              string               `json:"appName"`
+	ProblemDefinition    string               `json:"problemDefinition,omitempty"`
+	DataflowAttributeRef DataflowAttributeRef `json:"dataflowAttributeRef,omitempty"`
+	SkyAppRef            SkyAppRef            `json:"skyAppRef,omitempty"`
 }
 
 // ILPTaskStatus defines the observed state of ILPTask

@@ -19,7 +19,6 @@ package core
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"time"
 
@@ -31,7 +30,7 @@ import (
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
@@ -47,8 +46,8 @@ type ILPTaskReconciler struct {
 // +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=ilptasks,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=ilptasks/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=ilptasks/finalizers,verbs=update
-// +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=skyapp,verbs=create;update;patch;delete
-// +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=dataflowattribute,verbs=create;update;patch;delete
+//// +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=skyapp,verbs=create;update;patch;delete
+//// +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=dataflowattribute,verbs=create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -63,7 +62,18 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log := log.FromContext(ctx)
 
 	// print the name and namespace of the ILPTask
-	log.Info("Reconciling ILPTask ["+req.Name+"]", "name", req.Name, "namespace", req.Namespace)
+	log.Info("ILPTask [" + req.Name + "] Reconciler started")
+
+	// // Fetch the DataflowAttribute instance
+	// dataflowattribute := &corev1alpha1.DataflowAttribute{}
+	// err = r.Get(ctx, req.NamespacedName, dataflowattribute)
+	// if err != nil {
+	// 	if errors.IsNotFound(err) {
+	// 		return ctrl.Result{}, nil
+	// 	}
+	// 	log.Error(err, "Unable to fetch DataflowAttribute, something is wrong.")
+	// 	return ctrl.Result{}, err
+	// }
 
 	// Fetch the ILPTask instance
 	ilptask := &corev1alpha1.ILPTask{}
@@ -76,15 +86,41 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	// Check if both SkyApp and DataflowAttribute references are set
+	if ilptask.Spec.DataflowAttributeRef == (corev1alpha1.DataflowAttributeRef{}) ||
+		ilptask.Spec.SkyAppRef == (corev1alpha1.SkyAppRef{}) {
+		log.Info("ILPTask [" + req.Name + "] SkyApp or DataflowAttribute references are not set")
+		return ctrl.Result{}, nil
+	} else {
+		log.Info("ILPTask [" + req.Name + "] SkyApp and DataflowAttribute references are set")
+	}
+
+	// Fetch the SkyApp instance
+	// SkyApp may or may not exist
+	skyapp := &corev1alpha1.SkyApp{}
+	err = r.Get(ctx, types.NamespacedName{
+		Name:      ilptask.Spec.SkyAppRef.Name,
+		Namespace: ilptask.Spec.SkyAppRef.Namespace,
+	}, skyapp)
+	if err == nil {
+		log.Info("ILPTask [" + req.Name + "] SkyApp exists and was retrived")
+	}
+
+	// Logic to run the optimizer
+	// Check if the optimization is already completed
+	// if not, check if any pod is running
+	// if not, create a pod to run the optimizer
+
 	// Check if the optimization is already completed
 	// if it is completed, the Status is not nil
 	if ilptask.Status.Result != "" {
-		log.Info("ILPTask already completed or has a result")
+		log.Info("ILPTask [" + req.Name + "] task already completed or has a result")
 		return ctrl.Result{}, nil
 	}
 
 	// Define the Pod name
-	podName := fmt.Sprintf("%s-ilptaskr", ilptask.Name)
+	// podName := fmt.Sprintf("%s-ilptaskr", ilptask.Name)
+	podName := ilptask.Spec.AppName
 
 	// Check if the Pod exists
 	pod := &corev1.Pod{}
@@ -92,7 +128,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Pod doesn't exist, create it
-			log.Info("Creating optimizer Pod", "name", podName)
+			log.Info("ILPTask [" + req.Name + "] Creating optimizer Pod")
 			pod = &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      podName,
@@ -113,60 +149,62 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					},
 				},
 			}
+			if err = controllerutil.SetControllerReference(skyapp, pod, r.Scheme); err != nil {
+				log.Error(err, "Failed to set controller reference for pod")
+				return ctrl.Result{}, err
+			}
 			err = r.Create(ctx, pod)
 			if err != nil {
 				log.Error(err, "Unable to create optimizer Pod")
 				return ctrl.Result{}, err
 			}
 			// Requeue to check the Pod status later
-			log.Info("Requeue to check optimizer Pod status")
-			return ctrl.Result{RequeueAfter: time.Second * 6}, nil
+			log.Info("ILPTask [" + req.Name + "] Requeue to check optimizer Pod status")
+			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
 		log.Error(err, "Unable to get optimizer Pod")
 		return ctrl.Result{}, err
 	}
 
-	// Check Pod status
+	// if Pod exists, check its status
 	if pod.Status.Phase == corev1.PodSucceeded {
-		log.Info("Optimizer Pod exists, checking status...")
+		log.Info("ILPTask [" + req.Name + "] Optimizer Pod exists, checking status...")
 		// Pod completed successfully, get its logs
-		// logs, err := r.getPodLogs(ctx, pod)
-		// if err != nil {
-		// 	log.Error(err, "Unable to get Pod logs")
-		// 	return ctrl.Result{}, err
-		// }
-		// logs := pod.Spec.NodeName
-		log.Info("Optimizer Pod completed")
 
 		// Update the ILPTask status
 		ilptask.Status.Result = "Completed"
-		ilptask.Status.Solution, err = r.getPodLogs(ctx, pod)
+		if ilptask.Status.Solution, err = r.getPodLogs(ctx, pod); err != nil {
+			log.Error(err, "Unable to get Pod logs")
+			// return ctrl.Result{}, err
+		}
 		err = r.Status().Update(ctx, ilptask)
 		if err != nil {
 			log.Error(err, "Unable to update ILPTask status")
 			return ctrl.Result{}, err
 		}
+		log.Info("ILPTask [" + req.Name + "] Optimizer Pod completed")
 
 		// Delete the completed Pod
 		err = r.Delete(ctx, pod)
-		log.Info("Deleting completed Pod", "name", pod.Name)
+		log.Info("ILPTask ["+req.Name+"] Deleting completed Pod", "name", pod.Name)
 		if err != nil {
 			log.Error(err, "Unable to delete completed Pod")
 			// Don't return an error, as the main task is done
 		}
-
 		return ctrl.Result{}, nil
+
 	} else if pod.Status.Phase == corev1.PodFailed {
 		// Pod failed, update the ILPTask status with the failure
-		log.Info("Optimizer Pod failed")
+		log.Info("ILPTask [" + req.Name + "] Optimizer Pod failed")
 		ilptask.Status.Result = "Failed"
-		ilptask.Status.Solution, err = r.getPodLogs(ctx, pod)
+		if ilptask.Status.Solution, err = r.getPodLogs(ctx, pod); err != nil {
+			log.Error(err, "Unable to get Pod logs")
+		}
 		err = r.Status().Update(ctx, ilptask)
 		if err != nil {
 			log.Error(err, "Unable to update ILPTask status")
-			return ctrl.Result{}, err
+			// return ctrl.Result{}, err
 		}
-
 		// Delete the failed Pod
 		log.Info("Deleting failed Pod", "name", pod.Name)
 		err = r.Delete(ctx, pod)
@@ -174,7 +212,6 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			log.Error(err, "Unable to delete failed Pod")
 			// Don't return an error, as the main task is done
 		}
-
 		return ctrl.Result{}, nil
 	}
 
@@ -202,13 +239,13 @@ func (r *ILPTaskReconciler) getPodLogs(ctx context.Context, pod *corev1.Pod) (st
 func (r *ILPTaskReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1alpha1.ILPTask{}).
-		Watches(
-			&corev1alpha1.DataflowAttribute{},
-			&handler.EnqueueRequestForObject{},
-		).
-		Watches(
-			&corev1alpha1.SkyApp{},
-			&handler.EnqueueRequestForObject{},
-		).
+		// Watches(
+		// 	&corev1alpha1.DataflowAttribute{},
+		// 	&handler.EnqueueRequestForObject{},
+		// ).
+		// Watches(
+		// 	&corev1alpha1.SkyApp{},
+		// 	&handler.EnqueueRequestForObject{},
+		// ).
 		Complete(r)
 }

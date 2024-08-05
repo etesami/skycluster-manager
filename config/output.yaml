@@ -119,12 +119,34 @@ spec:
           spec:
             description: ILPTaskSpec defines the desired state of ILPTask
             properties:
-              problemDefinition:
+              appName:
                 description: Foo is an example field of ILPTask. Edit ilptask_types.go
                   to remove/update
                 type: string
+              dataflowAttributeRef:
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              problemDefinition:
+                type: string
+              skyAppRef:
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
             required:
-            - problemDefinition
+            - appName
             type: object
           status:
             description: ILPTaskStatus defines the observed state of ILPTask
@@ -827,15 +849,6 @@ rules:
 - apiGroups:
   - core.skycluster-manager.savitestbed.ca
   resources:
-  - dataflowattribute
-  verbs:
-  - create
-  - delete
-  - patch
-  - update
-- apiGroups:
-  - core.skycluster-manager.savitestbed.ca
-  resources:
   - ilptasks
   verbs:
   - create
@@ -909,15 +922,6 @@ rules:
   - providers/status
   verbs:
   - get
-  - patch
-  - update
-- apiGroups:
-  - core.skycluster-manager.savitestbed.ca
-  resources:
-  - skyapp
-  verbs:
-  - create
-  - delete
   - patch
   - update
 - apiGroups:
