@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -129,6 +130,28 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if errors.IsNotFound(err) {
 			// Pod doesn't exist, create it
 			log.Info("ILPTask [" + req.Name + "] Creating optimizer Pod")
+
+			// Build application graph from SkyApp and DataflowAttribute
+			nodeNames := ""
+			for i, thisNode := range skyapp.Spec.AppConfig {
+				nodeNames += thisNode.Name
+				if i < len(skyapp.Spec.AppConfig)-1 {
+					nodeNames += ","
+				}
+			}
+			if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-nodes", nodeNames, ilptask); err != nil {
+				log.Error(err, "Unable to create ConfigMap for nodes")
+				return ctrl.Result{}, err
+			}
+
+			// construct the command
+			command := `filename = '/scripts/__FILE_NAME__'
+with open(filename, 'r') as file:
+	for line in file:
+		print(line, end='')`
+
+			replacedCommand := strings.ReplaceAll(command, "__FILE_NAME__", ilptask.Spec.AppName+"-nodes")
+
 			pod = &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      podName,
@@ -143,7 +166,27 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 							Command: []string{
 								"python",
 								"-c",
-								"import time; print('Optimizer running...'); time.sleep(5); print('Optimizer completed')",
+								replacedCommand,
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name: "nodes-cm",
+									// This is the mount point inside the container
+									MountPath: "/scripts",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "nodes-cm",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										// This is the name of configMap
+										Name: ilptask.Spec.AppName + "-nodes",
+									},
+								},
 							},
 						},
 					},
@@ -217,6 +260,51 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Pod is still running, requeue
 	return ctrl.Result{RequeueAfter: time.Second * 6}, nil
+}
+
+// write a function to create a configmap given the content of the file
+func (r *ILPTaskReconciler) createConfigMap(ctx context.Context, name string, content string, ilptask *corev1alpha1.ILPTask) error {
+	log := log.FromContext(ctx)
+
+	cm := &corev1.ConfigMap{}
+	err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: ilptask.Namespace}, cm)
+	if err == nil {
+		log.Info("ILPTask: ConfigMap already exists, not expected.")
+		return nil
+	}
+
+	// Define a new ConfigMap object
+	cm = &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ilptask.Namespace,
+		},
+		Data: map[string]string{
+			name: content,
+		},
+	}
+
+	// Set MyResource instance as the owner and controller
+	if err := controllerutil.SetControllerReference(ilptask, cm, r.Scheme); err != nil {
+		log.Error(err, "ILPTask: Failed to set owner reference on ConfigMap")
+		return err
+	}
+
+	// Check if this ConfigMap already exists
+	found := &corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("ILPTask: Creating a new ConfigMap")
+		err = r.Create(ctx, cm)
+		if err != nil {
+			log.Error(err, "ILPTask: Failed to create new ConfigMap")
+			return err
+		}
+		// ConfigMap created successfully - return and requeue
+		return nil
+	}
+	log.Info("ILPTask: Should not be here. CM should not exist at this point.")
+	return nil
 }
 
 func (r *ILPTaskReconciler) getPodLogs(ctx context.Context, pod *corev1.Pod) (string, error) {
