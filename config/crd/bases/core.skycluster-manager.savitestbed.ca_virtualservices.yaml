@@ -41,6 +41,18 @@ spec:
             properties:
               name:
                 type: string
+              vservicecosts:
+                items:
+                  properties:
+                    cost:
+                      type: string
+                    providerName:
+                      type: string
+                  required:
+                  - cost
+                  - providerName
+                  type: object
+                type: array
             required:
             - name
             type: object

@@ -37,6 +37,163 @@ import (
 	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
 )
 
+var pythonBaseScript string = `
+import numpy as np
+import collections
+import pulp
+class Task:
+	def __init__(self, name):
+		self.name = name
+		self.vservices = []
+
+	def add_vservice(self, vs):
+		self.vservices.append(vs)
+	
+	def get_vservices(self):
+		return self.vservices
+
+	def contain_vservice(self, vs):
+		return vs in self.vservices
+
+class Dag:
+	def __init__(self):
+		self.tasks = []
+		self.vservices = {}
+		self.name = None
+		import networkx as nx 
+		self.graph = nx.DiGraph()
+
+	def add(self, task):
+		self.graph.add_node(task)
+		self.tasks.append(task)
+
+	def remove(self, task):
+		self.tasks.remove(task)
+		self.graph.remove_node(task)
+
+	def add_edge(self, op1, op2):
+		assert op1 in self.graph.nodes
+		assert op2 in self.graph.nodes
+		self.graph.add_edge(op1, op2)
+
+	def get_graph(self):
+		return self.graph
+
+	def get_tasks(self):
+		return self.tasks
+
+	def get_edges(self):
+		return self.graph.edges
+
+class VService:
+	def __init__(self, name, costs=None):
+		self.name = name
+		self.costs = {}
+		if costs is not None:
+			for p in costs:
+				self.costs[p] = costs[p]
+						
+	def set_costs(self, costs):
+		for p in costs:
+			self.costs[p] = costs[p]
+					
+	def get_costs(self):
+		return self.costs
+
+class Provider:
+	def __init__(self, name):
+		self.name = name
+		self.region = None
+		self.zone = None
+
+	def set_region(self, region):
+		self.region = region
+	
+	def set_zone(self, zone):
+		self.zone = zone
+
+`
+
+var pythonOptimizationScript string = `
+
+prob = pulp.LpProblem('cost_optimization', pulp.LpMinimize)
+        
+# Prepare the constants.
+V = dag.get_tasks()
+E = dag.graph.edges()  
+
+# Define the decision variables.
+c = {
+	v.name: pulp.LpVariable.matrix(v.name, range(len(providers)), cat='Binary') for v in dag.get_tasks()
+}
+
+# Formulate the constraints.
+# 1. c[v] 
+for v in V:
+	prob += pulp.lpSum(c[v.name]) <= len(providers)
+	prob += pulp.lpSum(c[v.name]) >= 1
+
+# special constraints
+# TODO: automatically add constraints
+# c[v1][p0] = 1
+
+# TODO: automatically add constraints
+for v in V:
+	if v.name == 'frontend':
+		for ii, pp in enumerate(providers):
+			if pp == 'aws-east1':
+				prob += c[v.name][ii] == 1
+
+objective = 0
+for v in V:
+	total_costs = {}
+	for vs in v.get_vservices():
+		# print(vs.name, vs.get_costs())
+		for p in vs.get_costs():
+			# p does not exist
+			if p not in total_costs:
+				total_costs[p] = float(vs.get_costs()[p])
+			else: # p exists
+				total_costs[p] += float(vs.get_costs()[p])
+	objective += pulp.lpDot(c[v.name], list(total_costs.values()))
+
+e = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(dict)))
+for u, v in E:
+	for ii in range(0, len(providers)-1):
+		for jj in range(ii+1, len(providers)):
+			e[u.name][v.name][str(ii)+'_'+str(jj)] = pulp.LpVariable(
+				u.name + v.name + str(ii)+'_'+str(jj) , cat='Binary')
+
+# 2. e[u][v] 
+for u, v in E:
+	for ii in range(0, len(providers)-1):
+		for jj in range(ii+1, len(providers)):
+			prob += e[u.name][v.name][str(ii)+'_'+str(jj)] <= c[u.name][ii]
+			prob += e[u.name][v.name][str(ii)+'_'+str(jj)] <= c[v.name][jj]
+			prob += e[u.name][v.name][str(ii)+'_'+str(jj)] >= c[v.name][ii] + c[v.name][jj] - 1
+			prob += e[u.name][v.name][str(ii)+'_'+str(jj)] >= 0
+
+# Construct F
+# C'ij=Cij+Cji
+pp = list(egress_cost_dict.keys())
+for u, v in E:
+	for ii in range(0, len(providers)-1):
+		for jj in range(ii+1, len(providers)):
+			objective += e[u.name][v.name][str(ii)+'_'+str(jj)] * (float(egress_cost_dict[pp[ii]][pp[jj]]) + float(egress_cost_dict[pp[jj]][pp[ii]]))
+
+prob += objective
+
+# Last Step: Solve the problem
+solver = pulp.PULP_CBC_CMD(msg=0)
+prob.solve(solver)
+
+# Step 8: Print the results
+print("Status:", pulp.LpStatus[prob.status])
+
+for v in V:
+	print(v.name, [l.varValue for l in c[v.name]])
+`
+
 // ILPTaskReconciler reconciles a ILPTask object
 type ILPTaskReconciler struct {
 	client.Client
@@ -65,17 +222,6 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// print the name and namespace of the ILPTask
 	log.Info("ILPTask [" + req.Name + "] Reconciler started")
 
-	// // Fetch the DataflowAttribute instance
-	// dataflowattribute := &corev1alpha1.DataflowAttribute{}
-	// err = r.Get(ctx, req.NamespacedName, dataflowattribute)
-	// if err != nil {
-	// 	if errors.IsNotFound(err) {
-	// 		return ctrl.Result{}, nil
-	// 	}
-	// 	log.Error(err, "Unable to fetch DataflowAttribute, something is wrong.")
-	// 	return ctrl.Result{}, err
-	// }
-
 	// Fetch the ILPTask instance
 	ilptask := &corev1alpha1.ILPTask{}
 	err := r.Get(ctx, req.NamespacedName, ilptask)
@@ -87,6 +233,12 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	// TODO: The ILPTask may be created by SkyApp or DataflowAttribute
+	// We need to check it any other references exist for this object
+	// Scenario: SkyApp and Dataflow are created, then SkyApp is deleted
+	// Then SkyApp is created again, therefor, the ILPTask should check
+	// if DataflowAttribute exists and if it does, it should add a reference
+
 	// Check if both SkyApp and DataflowAttribute references are set
 	if ilptask.Spec.DataflowAttributeRef == (corev1alpha1.DataflowAttributeRef{}) ||
 		ilptask.Spec.SkyAppRef == (corev1alpha1.SkyAppRef{}) {
@@ -96,15 +248,29 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Info("ILPTask [" + req.Name + "] SkyApp and DataflowAttribute references are set")
 	}
 
+	// At this point we have both SkyApp and DataflowAttribute references
+
 	// Fetch the SkyApp instance
 	// SkyApp may or may not exist
 	skyapp := &corev1alpha1.SkyApp{}
-	err = r.Get(ctx, types.NamespacedName{
+	if err = r.Get(ctx, types.NamespacedName{
 		Name:      ilptask.Spec.SkyAppRef.Name,
 		Namespace: ilptask.Spec.SkyAppRef.Namespace,
-	}, skyapp)
-	if err == nil {
-		log.Info("ILPTask [" + req.Name + "] SkyApp exists and was retrived")
+	}, skyapp); err == nil {
+		log.Info("ILPTask [" + req.Name + "]: SkyApp exists and was retrived")
+	} else {
+		log.Error(err, "ILPTask ["+req.Name+"]: Unable to fetch SkyApp, TODO: INVESTIGATE this case.")
+	}
+
+	// Fetch the DataflowAttribute instance
+	dataflowattr := &corev1alpha1.DataflowAttribute{}
+	if err = r.Get(ctx, types.NamespacedName{
+		Name:      ilptask.Spec.DataflowAttributeRef.Name,
+		Namespace: ilptask.Spec.DataflowAttributeRef.Namespace,
+	}, dataflowattr); err == nil {
+		log.Info("ILPTask [" + req.Name + "]: DataflowAttribute exists and was retrived")
+	} else {
+		log.Error(err, "ILPTask ["+req.Name+"]: Unable to fetch DataflowAttribute, TODO: INVESTIGATE this case.")
 	}
 
 	// Logic to run the optimizer
@@ -132,25 +298,216 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			log.Info("ILPTask [" + req.Name + "] Creating optimizer Pod")
 
 			// Build application graph from SkyApp and DataflowAttribute
-			nodeNames := ""
-			for i, thisNode := range skyapp.Spec.AppConfig {
-				nodeNames += thisNode.Name
+			taskNames := ""
+			for i, thisTask := range skyapp.Spec.AppConfig {
+				taskNames += thisTask.Name + ":"
+				for j, thisVService := range thisTask.Constraints.VirtualServiceConstraints {
+					taskNames += thisVService.VirtualServiceName
+					if j < len(thisTask.Constraints.VirtualServiceConstraints)-1 {
+						taskNames += ","
+					}
+				}
 				if i < len(skyapp.Spec.AppConfig)-1 {
-					nodeNames += ","
+					taskNames += "\n"
 				}
 			}
-			if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-nodes", nodeNames, ilptask); err != nil {
-				log.Error(err, "Unable to create ConfigMap for nodes")
+			if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-tasks", taskNames, ilptask); err != nil {
+				log.Error(err, "Unable to create ConfigMap for tasks")
 				return ctrl.Result{}, err
 			}
 
+			edges := ""
+			for i, currentEdge := range dataflowattr.Spec.Connections {
+				for j, dest := range currentEdge.Destinations {
+					edges += currentEdge.Source + ":"
+					edges += dest.Name
+					edges += "," + dest.Constraints.Latency
+					if j < len(currentEdge.Destinations)-1 {
+						edges += "\n"
+					}
+				}
+				if i < len(dataflowattr.Spec.Connections)-1 {
+					edges += "\n"
+				}
+			}
+			if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-edges", edges, ilptask); err != nil {
+				log.Error(err, "Unable to create ConfigMap for edges")
+				return ctrl.Result{}, err
+			}
+
+			// get providers data
+			providers := &corev1alpha1.ProviderList{}
+			listOps := &client.ListOptions{
+				Namespace: ilptask.Namespace,
+			}
+			if err := r.List(ctx, providers, listOps); err != nil {
+				log.Error(err, "Unable to get providers")
+				return ctrl.Result{}, err
+			} else {
+				// iterate over the providers and create a configmap for each
+				providersData := ""
+				for i, thisProvider := range providers.Items {
+					providersData += thisProvider.Spec.Name + ","
+					providersData += thisProvider.Spec.Region + ","
+					providersData += thisProvider.Spec.Zone
+					if i < len(providers.Items)-1 {
+						providersData += "\n"
+					}
+				}
+				if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-providers", providersData, ilptask); err != nil {
+					log.Error(err, "Unable to create ConfigMap for providers")
+					return ctrl.Result{}, err
+				}
+			}
+
+			// Fetch the ProviderAttribute instance
+			// Assuming there is one instance of this type (part of TODO list)
+			providerAttrs := &corev1alpha1.ProviderAttributeList{}
+			listOps = &client.ListOptions{
+				Namespace: ilptask.Namespace,
+			}
+			if err := r.List(ctx, providerAttrs, listOps); err != nil {
+				log.Error(err, "Unable to get providerAttrs")
+				return ctrl.Result{}, err
+			}
+			// Assume only one providerAttribute exists:
+			providerAttr := &providerAttrs.Items[0]
+			providerAttrData := ""
+			for i, currentLink := range providerAttr.Spec.ProviderMetrics {
+				for j, dest := range currentLink.DstProviderMetrics {
+					providerAttrData += currentLink.SrcProviderName + ":"
+					providerAttrData += dest.DstProviderName
+					providerAttrData += "," + dest.Latency
+					providerAttrData += "," + dest.EgressDataCost
+					if j < len(currentLink.DstProviderMetrics)-1 {
+						providerAttrData += "\n"
+					}
+				}
+				if i < len(providerAttr.Spec.ProviderMetrics)-1 {
+					providerAttrData += "\n"
+				}
+			}
+			if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-providerattr", providerAttrData, ilptask); err != nil {
+				log.Error(err, "Unable to create ConfigMap for providerAttr")
+				return ctrl.Result{}, err
+			}
+
+			// get virtual service data
+			vservices := &corev1alpha1.VirtualServiceList{}
+			listOps = &client.ListOptions{
+				Namespace: ilptask.Namespace,
+			}
+			if err := r.List(ctx, vservices, listOps); err != nil {
+				log.Error(err, "Unable to get virtual services")
+				return ctrl.Result{}, err
+			} else {
+				// iterate over the vservices and create a configmap for each
+				vservicesData := ""
+				for i, thisProvider := range vservices.Items {
+					for j, thisVServiceProvider := range thisProvider.Spec.VServiceCosts {
+						vservicesData += thisProvider.Spec.Name + ":"
+						vservicesData += thisVServiceProvider.ProviderName
+						vservicesData += "," + thisVServiceProvider.Cost
+						if j < len(thisProvider.Spec.VServiceCosts)-1 {
+							vservicesData += "\n"
+						}
+					}
+					if i < len(vservices.Items)-1 {
+						vservicesData += "\n"
+					}
+				}
+				if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-vservices", vservicesData, ilptask); err != nil {
+					log.Error(err, "Unable to create ConfigMap for vservices")
+					return ctrl.Result{}, err
+				}
+			}
+
 			// construct the command
-			command := `filename = '/scripts/__FILE_NAME__'
+			command := `
+__PYTHON_BASE_SCRIPT__
+
+providers = {}
+filename = '/providers/__FILE_NAME_PROVIDERS__'
 with open(filename, 'r') as file:
 	for line in file:
-		print(line, end='')`
+		provider_name = line.strip().split(",")[0] + '-' + line.strip().split(",")[1]
+		pp = Provider(provider_name)
+		pp.set_region(line.strip().split(",")[1])
+		pp.set_zone(line.strip().split(",")[2])
+		providers[provider_name] = pp
+print('providers [okay]')
 
-			replacedCommand := strings.ReplaceAll(command, "__FILE_NAME__", ilptask.Spec.AppName+"-nodes")
+vservices = {}
+vs_costs = {}
+filename = '/vservices/__FILE_NAME_VSERVICES__'
+with open(filename, 'r') as file:
+	for line in file:
+		vservice_name = line.strip().split(":")[0]
+		vservice_provider = line.strip().split(":")[1].split(",")[0]
+		vservice_cost = line.strip().split(":")[1].split(",")[1]
+		if vservice_name not in vservices:
+			vservices[vservice_name] = VService(vservice_name)
+		vs_costs[vservice_provider] = vservice_cost
+		vservices[vservice_name].set_costs(vs_costs)
+print('vservices [okay]')
+print('\n'+'-'*5)
+
+filename = '/tasks/__FILE_NAME_TASKS__'
+dag = Dag()
+tasks = {}
+with open(filename, 'r') as file:
+	for line in file:
+		tt = line.strip().split(":")[0]
+		tt_vservices = line.strip().split(":")[1].split(",")
+		task = Task(tt)
+		tasks[tt] = task
+		for vs in tt_vservices:
+			task.add_vservice(vservices[vs])
+		dag.add(task)
+print('tasks [okay]')
+print('\n'+'-'*5)
+
+filename = '/edges/__FILE_NAME_EDGES__'
+with open(filename, 'r') as file:
+	for line in file:
+		u = line.strip().split(":")[0]
+		v = line.strip().split(":")[1].split(',')[0]
+		dag.add_edge(tasks[u],tasks[v])
+print('edges [okay]')
+print('\n'+'-'*5)
+
+egress_cost_dict = {}
+for pp in providers:
+	egress_cost_dict[pp] = {}
+	for dd in providers:
+		egress_cost_dict[pp][dd] = 0
+filename = '/providerattr/__FILE_NAME_PROVIDERATTR__'
+with open(filename, 'r') as file:
+	for line in file:
+		pp = line.strip().split(':')[0]
+		dd = line.strip().split(':')[1].split(',')[0]
+		cc = line.strip().split(':')[1].split(',')[2]
+		egress_cost_dict[pp][dd] = cc
+print('providerAttr [okay]')
+print('\n'+'-'*5)
+
+# k[vs][provider] = cost
+k = {}
+for vs in vservices.values():
+	k[vs.name] = vs.get_costs()
+print('k [okay]')
+print('\n'+'-'*5)
+
+__PYTHON_OPTIMIZATION_SCRIPT__
+
+`
+			replacedCommand := strings.ReplaceAll(command, "__FILE_NAME_TASKS__", ilptask.Spec.AppName+"-tasks")
+			replacedCommand = strings.ReplaceAll(replacedCommand, "__FILE_NAME_PROVIDERS__", ilptask.Spec.AppName+"-providers")
+			replacedCommand = strings.ReplaceAll(replacedCommand, "__FILE_NAME_VSERVICES__", ilptask.Spec.AppName+"-vservices")
+			replacedCommand = strings.ReplaceAll(replacedCommand, "__FILE_NAME_EDGES__", ilptask.Spec.AppName+"-edges")
+			replacedCommand = strings.ReplaceAll(replacedCommand, "__FILE_NAME_PROVIDERATTR__", ilptask.Spec.AppName+"-providerattr")
+			replacedCommand = strings.ReplaceAll(replacedCommand, "__PYTHON_BASE_SCRIPT__", pythonBaseScript)
+			replacedCommand = strings.ReplaceAll(replacedCommand, "__PYTHON_OPTIMIZATION_SCRIPT__", pythonOptimizationScript)
 
 			pod = &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -162,7 +519,7 @@ with open(filename, 'r') as file:
 					Containers: []corev1.Container{
 						{
 							Name:  "optimizer",
-							Image: "python:3.9",
+							Image: "etesami/optimizer:v1.2",
 							Command: []string{
 								"python",
 								"-c",
@@ -170,21 +527,77 @@ with open(filename, 'r') as file:
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name: "nodes-cm",
+									Name: "tasks-cm",
 									// This is the mount point inside the container
-									MountPath: "/scripts",
+									MountPath: "/tasks",
+								},
+								{
+									Name:      "providers-cm",
+									MountPath: "/providers",
+								},
+								{
+									Name:      "vservices-cm",
+									MountPath: "/vservices",
+								},
+								{
+									Name:      "edges-cm",
+									MountPath: "/edges",
+								},
+								{
+									Name:      "providerattr-cm",
+									MountPath: "/providerattr",
 								},
 							},
 						},
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "nodes-cm",
+							Name: "tasks-cm",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
 										// This is the name of configMap
-										Name: ilptask.Spec.AppName + "-nodes",
+										Name: ilptask.Spec.AppName + "-tasks",
+									},
+								},
+							},
+						},
+						{
+							Name: "providers-cm",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: ilptask.Spec.AppName + "-providers",
+									},
+								},
+							},
+						},
+						{
+							Name: "vservices-cm",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: ilptask.Spec.AppName + "-vservices",
+									},
+								},
+							},
+						},
+						{
+							Name: "edges-cm",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: ilptask.Spec.AppName + "-edges",
+									},
+								},
+							},
+						},
+						{
+							Name: "providerattr-cm",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: ilptask.Spec.AppName + "-providerattr",
 									},
 								},
 							},

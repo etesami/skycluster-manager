@@ -23,12 +23,18 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type VServiceCost struct {
+	ProviderName string `json:"providerName"`
+	Cost         string `json:"cost"`
+}
+
 // VirtualServiceSpec defines the desired state of VirtualService
 type VirtualServiceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Name string `json:"name"`
+	Name          string         `json:"name"`
+	VServiceCosts []VServiceCost `json:"vservicecosts,omitempty"`
 }
 
 // VirtualServiceStatus defines the observed state of VirtualService

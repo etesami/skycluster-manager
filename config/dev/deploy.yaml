@@ -10,7 +10,7 @@ spec:
       constraints:
         locationConstraints:
           - providerName: aws-east1 # aws-west1, gcp-east1
-          - region: east # east, west, north, south
+          - region: east1 # east, west, north, south
           - providerType: edge # near-the-edge, Cloud
         virtualServiceConstraints:
           - virtualServiceName: vs1
@@ -46,30 +46,35 @@ spec:
             latency: 10ms
 ---
 # ################ VIRTUAL SERVICES ################
-apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-kind: VirtualService
-metadata:
-  name: virtualservice-sample
-spec:
-  name: vs1
----
+# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+# kind: VirtualService
+# metadata:
+#   name: virtualservice-sample
+# spec:
+#   name: vs1
+#   vservicecosts:
+#     - providerName: aws-east1
+#       cost: "100"
+#     - providerName: aws-west1
+#       cost: "200"
+# ---
 # # ################ PROVIDERS ################
 # apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 # kind: Provider
 # metadata:
-#   name: aws-east
+#   name: aws-east1
 # spec:
 #   name: aws
-#   region: east
+#   region: east1
 #   zone: default
 # ---
 # apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 # kind: Provider
 # metadata:
-#   name: aws-west
+#   name: aws-west1
 # spec:
 #   name: aws
-#   region: west
+#   region: west1
 #   zone: default
 # ---
 # # ################ ProviderAttribute ################
@@ -79,14 +84,14 @@ spec:
 #   name: providerattribute-sample
 # spec:
 #   providerMetrics:
-#     - srcProviderName: aws-east
+#     - srcProviderName: aws-east1
 #       dstProviderMetrics:
-#         - dstProviderName: aws-west
+#         - dstProviderName: aws-west1
 #           latency: 10ms
 #           egressDataCost: "100"
-#     - srcProviderName: aws-west
+#     - srcProviderName: aws-west1
 #       dstProviderMetrics:
-#         - dstProviderName: aws-east
+#         - dstProviderName: aws-east1
 #           latency: 10ms
 #           egressDataCost: "100"
 # ---
