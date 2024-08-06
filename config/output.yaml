@@ -205,17 +205,30 @@ spec:
           spec:
             description: ProviderAttributeSpec defines the desired state of ProviderAttribute
             properties:
-              latencyMap:
+              providerMetrics:
                 items:
                   properties:
-                    dstProviderName:
+                    dstProviderMetrics:
+                      items:
+                        properties:
+                          dstProviderName:
+                            type: string
+                          egressDataCost:
+                            type: string
+                          latency:
+                            type: string
+                        required:
+                        - dstProviderName
+                        type: object
+                      type: array
+                    srcProviderName:
                       type: string
-                    latency:
-                      type: string
+                  required:
+                  - srcProviderName
                   type: object
                 type: array
-              providerName:
-                type: string
+            required:
+            - providerMetrics
             type: object
           status:
             description: ProviderAttributeStatus defines the observed state of ProviderAttribute
