@@ -37,163 +37,6 @@ import (
 	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
 )
 
-var pythonBaseScript string = `
-import numpy as np
-import collections
-import pulp
-class Task:
-	def __init__(self, name):
-		self.name = name
-		self.vservices = []
-
-	def add_vservice(self, vs):
-		self.vservices.append(vs)
-	
-	def get_vservices(self):
-		return self.vservices
-
-	def contain_vservice(self, vs):
-		return vs in self.vservices
-
-class Dag:
-	def __init__(self):
-		self.tasks = []
-		self.vservices = {}
-		self.name = None
-		import networkx as nx 
-		self.graph = nx.DiGraph()
-
-	def add(self, task):
-		self.graph.add_node(task)
-		self.tasks.append(task)
-
-	def remove(self, task):
-		self.tasks.remove(task)
-		self.graph.remove_node(task)
-
-	def add_edge(self, op1, op2):
-		assert op1 in self.graph.nodes
-		assert op2 in self.graph.nodes
-		self.graph.add_edge(op1, op2)
-
-	def get_graph(self):
-		return self.graph
-
-	def get_tasks(self):
-		return self.tasks
-
-	def get_edges(self):
-		return self.graph.edges
-
-class VService:
-	def __init__(self, name, costs=None):
-		self.name = name
-		self.costs = {}
-		if costs is not None:
-			for p in costs:
-				self.costs[p] = costs[p]
-						
-	def set_costs(self, costs):
-		for p in costs:
-			self.costs[p] = costs[p]
-					
-	def get_costs(self):
-		return self.costs
-
-class Provider:
-	def __init__(self, name):
-		self.name = name
-		self.region = None
-		self.zone = None
-
-	def set_region(self, region):
-		self.region = region
-	
-	def set_zone(self, zone):
-		self.zone = zone
-
-`
-
-var pythonOptimizationScript string = `
-
-prob = pulp.LpProblem('cost_optimization', pulp.LpMinimize)
-        
-# Prepare the constants.
-V = dag.get_tasks()
-E = dag.graph.edges()  
-
-# Define the decision variables.
-c = {
-	v.name: pulp.LpVariable.matrix(v.name, range(len(providers)), cat='Binary') for v in dag.get_tasks()
-}
-
-# Formulate the constraints.
-# 1. c[v] 
-for v in V:
-	prob += pulp.lpSum(c[v.name]) <= len(providers)
-	prob += pulp.lpSum(c[v.name]) >= 1
-
-# special constraints
-# TODO: automatically add constraints
-# c[v1][p0] = 1
-
-# TODO: automatically add constraints
-for v in V:
-	if v.name == 'frontend':
-		for ii, pp in enumerate(providers):
-			if pp == 'aws-east1':
-				prob += c[v.name][ii] == 1
-
-objective = 0
-for v in V:
-	total_costs = {}
-	for vs in v.get_vservices():
-		# print(vs.name, vs.get_costs())
-		for p in vs.get_costs():
-			# p does not exist
-			if p not in total_costs:
-				total_costs[p] = float(vs.get_costs()[p])
-			else: # p exists
-				total_costs[p] += float(vs.get_costs()[p])
-	objective += pulp.lpDot(c[v.name], list(total_costs.values()))
-
-e = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(dict)))
-for u, v in E:
-	for ii in range(0, len(providers)-1):
-		for jj in range(ii+1, len(providers)):
-			e[u.name][v.name][str(ii)+'_'+str(jj)] = pulp.LpVariable(
-				u.name + v.name + str(ii)+'_'+str(jj) , cat='Binary')
-
-# 2. e[u][v] 
-for u, v in E:
-	for ii in range(0, len(providers)-1):
-		for jj in range(ii+1, len(providers)):
-			prob += e[u.name][v.name][str(ii)+'_'+str(jj)] <= c[u.name][ii]
-			prob += e[u.name][v.name][str(ii)+'_'+str(jj)] <= c[v.name][jj]
-			prob += e[u.name][v.name][str(ii)+'_'+str(jj)] >= c[v.name][ii] + c[v.name][jj] - 1
-			prob += e[u.name][v.name][str(ii)+'_'+str(jj)] >= 0
-
-# Construct F
-# C'ij=Cij+Cji
-pp = list(egress_cost_dict.keys())
-for u, v in E:
-	for ii in range(0, len(providers)-1):
-		for jj in range(ii+1, len(providers)):
-			objective += e[u.name][v.name][str(ii)+'_'+str(jj)] * (float(egress_cost_dict[pp[ii]][pp[jj]]) + float(egress_cost_dict[pp[jj]][pp[ii]]))
-
-prob += objective
-
-# Last Step: Solve the problem
-solver = pulp.PULP_CBC_CMD(msg=0)
-prob.solve(solver)
-
-# Step 8: Print the results
-print("Status:", pulp.LpStatus[prob.status])
-
-for v in V:
-	print(v.name, [l.varValue for l in c[v.name]])
-`
-
 // ILPTaskReconciler reconciles a ILPTask object
 type ILPTaskReconciler struct {
 	client.Client
@@ -301,12 +144,24 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			taskNames := ""
 			for i, thisTask := range skyapp.Spec.AppConfig {
 				taskNames += thisTask.Name + ":"
+				vservices := ""
+				locConstraints := ""
 				for j, thisVService := range thisTask.Constraints.VirtualServiceConstraints {
-					taskNames += thisVService.VirtualServiceName
+					vservices += thisVService.VirtualServiceName
 					if j < len(thisTask.Constraints.VirtualServiceConstraints)-1 {
-						taskNames += ","
+						vservices += ","
 					}
 				}
+				for j, thisLoc := range thisTask.Constraints.LocationConstraints {
+					locName := "" + thisLoc.ProviderName + ","
+					locType := "" + thisLoc.ProviderType + ","
+					locRegion := "" + thisLoc.Region + ""
+					locConstraints += locName + locType + locRegion
+					if j < len(thisTask.Constraints.LocationConstraints)-1 {
+						locConstraints += "__"
+					}
+				}
+				taskNames += vservices + "__" + locConstraints
 				if i < len(skyapp.Spec.AppConfig)-1 {
 					taskNames += "\n"
 				}
@@ -349,7 +204,8 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				for i, thisProvider := range providers.Items {
 					providersData += thisProvider.Spec.Name + ","
 					providersData += thisProvider.Spec.Region + ","
-					providersData += thisProvider.Spec.Zone
+					providersData += thisProvider.Spec.Zone + ","
+					providersData += thisProvider.Spec.Type
 					if i < len(providers.Items)-1 {
 						providersData += "\n"
 					}
@@ -422,92 +278,15 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 			}
 
-			// construct the command
-			command := `
-__PYTHON_BASE_SCRIPT__
-
-providers = {}
-filename = '/providers/__FILE_NAME_PROVIDERS__'
-with open(filename, 'r') as file:
-	for line in file:
-		provider_name = line.strip().split(",")[0] + '-' + line.strip().split(",")[1]
-		pp = Provider(provider_name)
-		pp.set_region(line.strip().split(",")[1])
-		pp.set_zone(line.strip().split(",")[2])
-		providers[provider_name] = pp
-print('providers [okay]')
-
-vservices = {}
-vs_costs = {}
-filename = '/vservices/__FILE_NAME_VSERVICES__'
-with open(filename, 'r') as file:
-	for line in file:
-		vservice_name = line.strip().split(":")[0]
-		vservice_provider = line.strip().split(":")[1].split(",")[0]
-		vservice_cost = line.strip().split(":")[1].split(",")[1]
-		if vservice_name not in vservices:
-			vservices[vservice_name] = VService(vservice_name)
-		vs_costs[vservice_provider] = vservice_cost
-		vservices[vservice_name].set_costs(vs_costs)
-print('vservices [okay]')
-print('\n'+'-'*5)
-
-filename = '/tasks/__FILE_NAME_TASKS__'
-dag = Dag()
-tasks = {}
-with open(filename, 'r') as file:
-	for line in file:
-		tt = line.strip().split(":")[0]
-		tt_vservices = line.strip().split(":")[1].split(",")
-		task = Task(tt)
-		tasks[tt] = task
-		for vs in tt_vservices:
-			task.add_vservice(vservices[vs])
-		dag.add(task)
-print('tasks [okay]')
-print('\n'+'-'*5)
-
-filename = '/edges/__FILE_NAME_EDGES__'
-with open(filename, 'r') as file:
-	for line in file:
-		u = line.strip().split(":")[0]
-		v = line.strip().split(":")[1].split(',')[0]
-		dag.add_edge(tasks[u],tasks[v])
-print('edges [okay]')
-print('\n'+'-'*5)
-
-egress_cost_dict = {}
-for pp in providers:
-	egress_cost_dict[pp] = {}
-	for dd in providers:
-		egress_cost_dict[pp][dd] = 0
-filename = '/providerattr/__FILE_NAME_PROVIDERATTR__'
-with open(filename, 'r') as file:
-	for line in file:
-		pp = line.strip().split(':')[0]
-		dd = line.strip().split(':')[1].split(',')[0]
-		cc = line.strip().split(':')[1].split(',')[2]
-		egress_cost_dict[pp][dd] = cc
-print('providerAttr [okay]')
-print('\n'+'-'*5)
-
-# k[vs][provider] = cost
-k = {}
-for vs in vservices.values():
-	k[vs.name] = vs.get_costs()
-print('k [okay]')
-print('\n'+'-'*5)
-
-__PYTHON_OPTIMIZATION_SCRIPT__
-
-`
-			replacedCommand := strings.ReplaceAll(command, "__FILE_NAME_TASKS__", ilptask.Spec.AppName+"-tasks")
+			replacedCommand := strings.ReplaceAll(pythonOptimizationCommand, "__FILE_NAME_TASKS__", ilptask.Spec.AppName+"-tasks")
 			replacedCommand = strings.ReplaceAll(replacedCommand, "__FILE_NAME_PROVIDERS__", ilptask.Spec.AppName+"-providers")
 			replacedCommand = strings.ReplaceAll(replacedCommand, "__FILE_NAME_VSERVICES__", ilptask.Spec.AppName+"-vservices")
 			replacedCommand = strings.ReplaceAll(replacedCommand, "__FILE_NAME_EDGES__", ilptask.Spec.AppName+"-edges")
 			replacedCommand = strings.ReplaceAll(replacedCommand, "__FILE_NAME_PROVIDERATTR__", ilptask.Spec.AppName+"-providerattr")
 			replacedCommand = strings.ReplaceAll(replacedCommand, "__PYTHON_BASE_SCRIPT__", pythonBaseScript)
-			replacedCommand = strings.ReplaceAll(replacedCommand, "__PYTHON_OPTIMIZATION_SCRIPT__", pythonOptimizationScript)
+			replacedCommand = strings.ReplaceAll(replacedCommand, "__PYTHON_OPTIMIZATION_BASE__", pythonOptimizationBase)
+			replacedCommand = strings.ReplaceAll(replacedCommand, "__PYTHON_OPTIMIZATION_PROBLEM__", pythonOptimizationProblem)
+			replacedCommand = strings.ReplaceAll(replacedCommand, "__PYTHON_OPTIMIZATION_CONSTRAINTS__", pythonOptimizationConstraints)
 
 			pod = &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
