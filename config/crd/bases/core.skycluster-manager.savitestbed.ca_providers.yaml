@@ -45,11 +45,14 @@ spec:
                 type: string
               region:
                 type: string
+              type:
+                type: string
               zone:
                 type: string
             required:
             - name
             - region
+            - type
             - zone
             type: object
           status:

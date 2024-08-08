@@ -10,8 +10,9 @@ spec:
       constraints:
         locationConstraints:
           - providerName: aws-east1 # aws-west1, gcp-east1
-          - region: east1 # east, west, north, south
-          - providerType: edge # near-the-edge, Cloud
+            region: east1 # east, west, north, south
+            providerType: cloud # near-the-edge, Cloud
+          - providerName: aws-west1 # aws-west1, gcp-east1
         virtualServiceConstraints:
           - virtualServiceName: vs1
     - name: backend
@@ -67,6 +68,7 @@ spec:
 #   name: aws
 #   region: east1
 #   zone: default
+#   type: cloud
 # ---
 # apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 # kind: Provider
@@ -76,6 +78,7 @@ spec:
 #   name: aws
 #   region: west1
 #   zone: default
+#   type: cloud
 # ---
 # # ################ ProviderAttribute ################
 # apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1

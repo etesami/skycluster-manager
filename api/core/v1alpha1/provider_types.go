@@ -32,6 +32,7 @@ type ProviderSpec struct {
 	Name   string `json:"name"`
 	Region string `json:"region"`
 	Zone   string `json:"zone"`
+	Type   string `json:"type"`
 }
 
 // ProviderStatus defines the observed state of Provider
