@@ -19,9 +19,14 @@ package core
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
@@ -47,11 +52,76 @@ type ProviderReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
 func (r *ProviderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
+	log.Info("Provider [" + req.Name + "] Reconciler started")
 
-	// TODO(user): your logic here
+	provider := &corev1alpha1.Provider{}
+	err := r.Get(ctx, req.NamespacedName, provider)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("Provider [" + req.Name + "] not found. Why?")
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "Unable to fetch ["+req.Name+"]")
+	}
+
+	providersData := ""
+	providersData += provider.Spec.Name + ","
+	providersData += provider.Spec.Region + ","
+	providersData += provider.Spec.Zone + ","
+	providersData += provider.Spec.Type
+
+	if err = r.createConfigMap(ctx, provider.Spec.AppName+"-providers", providersData, provider); err != nil {
+		log.Error(err, "Unable to create ConfigMap for providers")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
+}
+
+// write a function to create a configmap given the content of the file
+func (r *ProviderReconciler) createConfigMap(ctx context.Context, name string, content string, provider *corev1alpha1.Provider) error {
+	log := log.FromContext(ctx)
+
+	cm := &corev1.ConfigMap{}
+	err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: provider.Namespace}, cm)
+	if err == nil {
+		log.Info("Provider: ConfigMap already exists, not expected.")
+		return nil
+	}
+
+	// Define a new ConfigMap object
+	cm = &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: provider.Namespace,
+		},
+		Data: map[string]string{
+			name: content,
+		},
+	}
+
+	// Set MyResource instance as the owner and controller
+	if err := controllerutil.SetControllerReference(provider, cm, r.Scheme); err != nil {
+		log.Error(err, "Provider: Failed to set owner reference on ConfigMap")
+		return err
+	}
+
+	// Check if this ConfigMap already exists
+	found := &corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("Provider: Creating a new ConfigMap")
+		err = r.Create(ctx, cm)
+		if err != nil {
+			log.Error(err, "Provider: Failed to create new ConfigMap")
+			return err
+		}
+		// ConfigMap created successfully - return and requeue
+		return nil
+	}
+	log.Info("Provider: Should not be here. CM should not exist at this point.")
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

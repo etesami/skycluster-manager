@@ -23,15 +23,10 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type DstProviderMetric struct {
+type ProviderMetrics struct {
 	DstProviderName string `json:"dstProviderName"`
 	Latency         string `json:"latency,omitempty"`
 	EgressDataCost  string `json:"egressDataCost,omitempty"`
-}
-
-type ProviderMetric struct {
-	SrcProviderName    string              `json:"srcProviderName"`
-	DstProviderMetrics []DstProviderMetric `json:"dstProviderMetrics,omitempty"`
 }
 
 // ProviderAttributeSpec defines the desired state of ProviderAttribute
@@ -39,7 +34,8 @@ type ProviderAttributeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	ProviderMetrics []ProviderMetric `json:"providerMetrics"`
+	ProviderReference ProviderRef       `json:"providerReference"`
+	ProviderMetrics   []ProviderMetrics `json:"providerMetrics"`
 }
 
 // ProviderAttributeStatus defines the observed state of ProviderAttribute

@@ -208,27 +208,29 @@ spec:
               providerMetrics:
                 items:
                   properties:
-                    dstProviderMetrics:
-                      items:
-                        properties:
-                          dstProviderName:
-                            type: string
-                          egressDataCost:
-                            type: string
-                          latency:
-                            type: string
-                        required:
-                        - dstProviderName
-                        type: object
-                      type: array
-                    srcProviderName:
+                    dstProviderName:
+                      type: string
+                    egressDataCost:
+                      type: string
+                    latency:
                       type: string
                   required:
-                  - srcProviderName
+                  - dstProviderName
                   type: object
                 type: array
+              providerReference:
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
             required:
             - providerMetrics
+            - providerReference
             type: object
           status:
             description: ProviderAttributeStatus defines the observed state of ProviderAttribute
