@@ -59,7 +59,7 @@ spec:
 #     - providerName: aws-west1
 #       cost: "200"
 # ---
-# # ################ PROVIDERS ################
+# ################ PROVIDERS ################
 # apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 # kind: Provider
 # metadata:
@@ -70,60 +70,42 @@ spec:
 #   zone: default
 #   type: cloud
 # ---
-apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-kind: Provider
-metadata:
-  name: aws-west1
-spec:
-  name: aws
-  region: west1
-  zone: default
-  type: cloud
----
+# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+# kind: Provider
+# metadata:
+#   name: aws-west1
+# spec:
+#   name: aws
+#   region: west1
+#   zone: default
+#   type: cloud
+# ---
 # ################ ProviderAttribute ################
-apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-kind: ProviderAttribute
-metadata:
-  name: pattr-aws-east1-aws-west1
-spec:
-  providerReference:
-    name: aws-east1
-    namespace: default
-  providerMetrics:
-    - dstProviderName: aws-west1
-      latency: 10ms
-      egressDataCost: "100"
----
-apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-kind: ProviderAttribute
-metadata:
-  name: pattr-aws-west1
-spec:
-  providerReference:
-    name: aws-west1
-    namespace: default
-  providerMetrics:
-    - dstProviderName: aws-east1
-      latency: 10ms
-      egressDataCost: "100"
----
-# # ################ ProviderAttribute ################
 # apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 # kind: ProviderAttribute
 # metadata:
-#   name: providerattribute-sample
+#   name: pattr-aws-east1-aws-west1
 # spec:
+#   providerReference:
+#     name: aws-east1
+#     namespace: default
 #   providerMetrics:
-#     - srcProviderName: aws-east1
-#       dstProviderMetrics:
-#         - dstProviderName: aws-west1
-#           latency: 10ms
-#           egressDataCost: "100"
-#     - srcProviderName: aws-west1
-#       dstProviderMetrics:
-#         - dstProviderName: aws-east1
-#           latency: 10ms
-#           egressDataCost: "100"
+#     - dstProviderName: aws-west1
+#       latency: 10ms
+#       egressDataCost: "100"
+# ---
+# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+# kind: ProviderAttribute
+# metadata:
+#   name: pattr-aws-west1-aws-east1
+# spec:
+#   providerReference:
+#     name: aws-west1
+#     namespace: default
+#   providerMetrics:
+#     - dstProviderName: aws-east1
+#       latency: 10ms
+#       egressDataCost: "100"
 # ---
 # apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 # kind: ILPTask

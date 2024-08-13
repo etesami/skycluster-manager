@@ -226,23 +226,25 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				log.Error(err, "Unable to get providerAttrs")
 				return ctrl.Result{}, err
 			}
-			// Assume only one providerAttribute exists:
-			providerAttr := &providerAttrs.Items[0]
+
+			// iterate over the providerAttrs and create a configmap for each
 			providerAttrData := ""
-			for i, currentLink := range providerAttr.Spec.ProviderMetrics {
-				for j, dest := range currentLink.DstProviderMetrics {
-					providerAttrData += currentLink.SrcProviderName + ":"
-					providerAttrData += dest.DstProviderName
-					providerAttrData += "," + dest.Latency
-					providerAttrData += "," + dest.EgressDataCost
-					if j < len(currentLink.DstProviderMetrics)-1 {
+			for i, providerAttr := range providerAttrs.Items {
+				currentNode := providerAttr.Spec.ProviderReference
+				for j, destnationNode := range providerAttr.Spec.ProviderMetrics {
+					providerAttrData += currentNode.Name + ":"
+					providerAttrData += destnationNode.DstProviderName
+					providerAttrData += "," + destnationNode.Latency
+					providerAttrData += "," + destnationNode.EgressDataCost
+					if j < len(providerAttr.Spec.ProviderMetrics)-1 {
 						providerAttrData += "\n"
 					}
 				}
-				if i < len(providerAttr.Spec.ProviderMetrics)-1 {
+				if i < len(providerAttrs.Items)-1 {
 					providerAttrData += "\n"
 				}
 			}
+
 			if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-providerattr", providerAttrData, ilptask); err != nil {
 				log.Error(err, "Unable to create ConfigMap for providerAttr")
 				return ctrl.Result{}, err
@@ -397,7 +399,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			log.Info("ILPTask [" + req.Name + "] Requeue to check optimizer Pod status")
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 		}
-		log.Error(err, "Unable to get optimizer Pod")
+		log.Error(err, "Pod exists but I am unable to get optimizer Pod")
 		return ctrl.Result{}, err
 	}
 

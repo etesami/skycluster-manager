@@ -85,6 +85,10 @@ func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 			err = r.Create(ctx, ilptask)
 			if err != nil {
+				if errors.IsAlreadyExists(err) {
+					log.Info("ILPTask [" + skyapp.Spec.AppName + "] already exists")
+					return ctrl.Result{}, nil
+				}
 				log.Error(err, "Failed to create ILPTask ["+skyapp.Spec.AppName+"]")
 				return ctrl.Result{}, err
 			}

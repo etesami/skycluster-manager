@@ -80,6 +80,11 @@ func (r *DataflowAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			ilptask.Spec.DataflowAttributeRef.Namespace = dataflowattr.Namespace
 			err = r.Create(ctx, ilptask)
 			if err != nil {
+				// check if error is already exists error
+				if errors.IsAlreadyExists(err) {
+					log.Info("ILPTask [" + dataflowattr.Spec.AppName + "] already exists")
+					return ctrl.Result{}, nil
+				}
 				log.Error(err, "Failed to create ILPTask ["+dataflowattr.Spec.AppName+"]")
 				return ctrl.Result{}, err
 			}

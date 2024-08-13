@@ -55,31 +55,32 @@ func (r *ProviderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	log := log.FromContext(ctx)
 	log.Info("Provider [" + req.Name + "] Reconciler started")
 
-	provider := &corev1alpha1.Provider{}
-	err := r.Get(ctx, req.NamespacedName, provider)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			log.Info("Provider [" + req.Name + "] not found. Why?")
-			return ctrl.Result{}, nil
-		}
-		log.Error(err, "Unable to fetch ["+req.Name+"]")
-	}
+	// provider := &corev1alpha1.Provider{}
+	// err := r.Get(ctx, req.NamespacedName, provider)
+	// if err != nil {
+	// 	if errors.IsNotFound(err) {
+	// 		log.Info("Provider [" + req.Name + "] not found. Why?")
+	// 		return ctrl.Result{}, nil
+	// 	}
+	// 	log.Error(err, "Unable to fetch ["+req.Name+"]")
+	// }
 
-	providersData := ""
-	providersData += provider.Spec.Name + ","
-	providersData += provider.Spec.Region + ","
-	providersData += provider.Spec.Zone + ","
-	providersData += provider.Spec.Type
+	// // Why do we save information within a ConfigMap?
+	// providersData := ""
+	// providersData += provider.Spec.Name + ","
+	// providersData += provider.Spec.Region + ","
+	// providersData += provider.Spec.Zone + ","
+	// providersData += provider.Spec.Type
 
-	if err = r.createConfigMap(ctx, provider.Spec.AppName+"-providers", providersData, provider); err != nil {
-		log.Error(err, "Unable to create ConfigMap for providers")
-		return ctrl.Result{}, err
-	}
+	// if err = r.createConfigMap(ctx, "skycluster-providers", providersData, provider); err != nil {
+	// 	log.Error(err, "Unable to create ConfigMap for providers")
+	// 	return ctrl.Result{}, err
+	// }
 
 	return ctrl.Result{}, nil
 }
 
-// write a function to create a configmap given the content of the file
+// This is a function that creates a configmap given the content of the file
 func (r *ProviderReconciler) createConfigMap(ctx context.Context, name string, content string, provider *corev1alpha1.Provider) error {
 	log := log.FromContext(ctx)
 
