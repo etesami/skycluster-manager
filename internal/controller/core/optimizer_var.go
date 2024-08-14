@@ -213,7 +213,7 @@ providers = {}
 filename = '/providers/__FILE_NAME_PROVIDERS__'
 with open(filename, 'r') as file:
   for line in file:
-    provider_name = line.strip().split(",")[0] + '-' + line.strip().split(",")[1]
+    provider_name = line.strip().split(",")[0]
     pp = Provider(provider_name)
     pp.set_region(line.strip().split(",")[1])
     pp.set_zone(line.strip().split(",")[2])

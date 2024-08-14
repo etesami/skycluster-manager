@@ -9,24 +9,24 @@ spec:
     - name: frontend
       constraints:
         locationConstraints:
-          - providerName: aws-east1 # aws-west1, gcp-east1
-            region: east1 # east, west, north, south
+          - providerName: provider-1 # aws-west1, gcp-east1
+            region: west1 # east, west, north, south
             providerType: cloud # near-the-edge, Cloud
-          - providerName: aws-west1 # aws-west1, gcp-east1
+          - providerName: provider-1 # aws-west1, gcp-east1
         virtualServiceConstraints:
-          - virtualServiceName: vs1
+          - virtualServiceName: vs-1
     - name: backend
       constraints:
         locationConstraints:
-          - providerName: aws-east1
+          - providerName: provider-2
         virtualServiceConstraints:
-          - virtualServiceName: vs1
+          - virtualServiceName: vs-1
     - name: payment
       constraints:
         locationConstraints:
-          - providerName: aws-east1
+          - providerName: provider-3
         virtualServiceConstraints:
-          - virtualServiceName: vs1
+          - virtualServiceName: vs-1
 ---
 apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 kind: DataflowAttribute
