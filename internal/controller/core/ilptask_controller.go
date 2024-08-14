@@ -472,6 +472,10 @@ func (r *ILPTaskReconciler) createConfigMap(ctx context.Context, name string, co
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ilptask.Namespace,
+			Annotations: map[string]string{
+				SkyClusterManagedByAnnotation:  "skycluster",
+				SkyClusterConfigTypeAnnotation: "optimizer",
+			},
 		},
 		Data: map[string]string{
 			name: content,
