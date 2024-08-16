@@ -1,11 +1,15 @@
 package core
 
 var (
-	SkyClusterAPI string = "skycluster-manager.savitestb.ca"
+	SkyClusterAPI string = "skycluster-manager.savitestbed.ca"
 
 	// managed-by annotation
-	SkyClusterManagedByAnnotation string = "skycluster-manager.savitestb.ca/managed-by"
+	SkyClusterAnnotationManagedBy string = SkyClusterAPI + "/managed-by"
 
 	// config-type annotation
-	SkyClusterConfigTypeAnnotation string = "skycluster-manager.savitestb.ca/config-type"
+	SkyClusterAnnotationConfigType    string = SkyClusterAPI + "/config-type"
+	SkyClusterAnnotationProvierName   string = SkyClusterAPI + "/provider-name"
+	SkyClusterAnnotationProvierRegion string = SkyClusterAPI + "/provider-region"
+	SkyClusterAnnotationProvierZone   string = SkyClusterAPI + "/provider-zone"
+	SkyClusterAnnotationProvierType   string = SkyClusterAPI + "/provider-type"
 )

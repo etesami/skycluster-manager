@@ -182,22 +182,23 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{}, err
 			}
 
-			// get providers data
-			providers := &corev1alpha1.ProviderList{}
-			listOps := &client.ListOptions{
-				Namespace: ilptask.Namespace,
-			}
-			if err := r.List(ctx, providers, listOps); err != nil {
-				log.Error(err, "Unable to get providers")
+			// Get providers data
+			// Filter based on the labels
+			if providers, err := r.Clientset.ConfigMaps("").List(ctx, metav1.ListOptions{
+				LabelSelector: SkyClusterAnnotationManagedBy + "=skycluster," +
+					SkyClusterAnnotationConfigType + "=provider-vars," +
+					SkyClusterAnnotationProvierZone + "=default",
+			}); err != nil {
+				log.Error(err, "Unable to retrieve Providers configmaps")
 				return ctrl.Result{}, err
 			} else {
 				// iterate over the providers and create a configmap for each
 				providersData := ""
 				for i, thisProvider := range providers.Items {
-					providersData += thisProvider.Spec.Name + ","
-					providersData += thisProvider.Spec.Region + ","
-					providersData += thisProvider.Spec.Zone + ","
-					providersData += thisProvider.Spec.Type
+					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierName] + ","
+					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierRegion] + ","
+					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierZone] + ","
+					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierType]
 					if i < len(providers.Items)-1 {
 						providersData += "\n"
 					}
@@ -208,13 +209,37 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 			}
 
+			// providers := &corev1alpha1.ProviderList{}
+			// listOps := &client.ListOptions{
+			// 	Namespace: ilptask.Namespace,
+			// }
+			// if err := r.List(ctx, providers, listOps); err != nil {
+			// 	log.Error(err, "Unable to get providers")
+			// 	return ctrl.Result{}, err
+			// } else {
+			// 	// iterate over the providers and create a configmap for each
+			// 	providersData := ""
+			// 	for i, thisProvider := range providers.Items {
+			// 		providersData += thisProvider.Spec.Name + ","
+			// 		providersData += thisProvider.Spec.Region + ","
+			// 		providersData += thisProvider.Spec.Zone + ","
+			// 		providersData += thisProvider.Spec.Type
+			// 		if i < len(providers.Items)-1 {
+			// 			providersData += "\n"
+			// 		}
+			// 	}
+			// 	if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-providers", providersData, ilptask); err != nil {
+			// 		log.Error(err, "Unable to create ConfigMap for providers")
+			// 		return ctrl.Result{}, err
+			// 	}
+			// }
+
 			// Fetch the ProviderAttribute instance
 			// Assuming there is one instance of this type (part of TODO list)
 			providerAttrs := &corev1alpha1.ProviderAttributeList{}
-			listOps = &client.ListOptions{
+			if err := r.List(ctx, providerAttrs, &client.ListOptions{
 				Namespace: ilptask.Namespace,
-			}
-			if err := r.List(ctx, providerAttrs, listOps); err != nil {
+			}); err != nil {
 				log.Error(err, "Unable to get providerAttrs")
 				return ctrl.Result{}, err
 			}
@@ -244,10 +269,9 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			// get virtual service data
 			vservices := &corev1alpha1.VirtualServiceList{}
-			listOps = &client.ListOptions{
+			if err := r.List(ctx, vservices, &client.ListOptions{
 				Namespace: ilptask.Namespace,
-			}
-			if err := r.List(ctx, vservices, listOps); err != nil {
+			}); err != nil {
 				log.Error(err, "Unable to get virtual services")
 				return ctrl.Result{}, err
 			} else {
@@ -465,8 +489,8 @@ func (r *ILPTaskReconciler) createConfigMap(ctx context.Context, name string, co
 			Name:      name,
 			Namespace: ilptask.Namespace,
 			Annotations: map[string]string{
-				SkyClusterManagedByAnnotation:  "skycluster",
-				SkyClusterConfigTypeAnnotation: "optimizer",
+				SkyClusterAnnotationManagedBy:  "skycluster",
+				SkyClusterAnnotationConfigType: "optimizer",
 			},
 		},
 		Data: map[string]string{
