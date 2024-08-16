@@ -59,27 +59,6 @@ spec:
 #     - providerName: aws-west1
 #       cost: "200"
 # ---
-# ################ PROVIDERS ################
-# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-# kind: Provider
-# metadata:
-#   name: aws-east1
-# spec:
-#   name: aws
-#   region: east1
-#   zone: default
-#   type: cloud
-# ---
-# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-# kind: Provider
-# metadata:
-#   name: aws-west1
-# spec:
-#   name: aws
-#   region: west1
-#   zone: default
-#   type: cloud
-# ---
 # ################ ProviderAttribute ################
 # apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 # kind: ProviderAttribute

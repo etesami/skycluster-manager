@@ -38,7 +38,6 @@ func (r *SkyApp) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 //+kubebuilder:webhook:path=/mutate-apps-v1-deployment,mutating=true,failurePolicy=fail,sideEffects=None,groups=apps,resources=deployments,verbs=create;update;delete,versions=v1,name=mdeployment.kb.io,admissionReviewVersions=v1
 
 // var _ webhook.Defaulter = &SkyApp{}

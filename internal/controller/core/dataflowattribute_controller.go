@@ -38,15 +38,7 @@ type DataflowAttributeReconciler struct {
 // +kubebuilder:rbac:groups=policy.skycluster-manager.savitestbed.ca,resources=dataflowattributes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=policy.skycluster-manager.savitestbed.ca,resources=dataflowattributes/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the DataflowAttribute object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
+// Reconcile reconciles the DataflowAttribute object
 func (r *DataflowAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 	log.Info("DataflowAttr [" + req.Name + "] Reconciler started")
