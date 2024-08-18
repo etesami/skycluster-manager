@@ -19,13 +19,9 @@ package core
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
 )
@@ -42,42 +38,43 @@ type ProviderAttributeReconciler struct {
 
 // Reconcile reconciles the ProviderAttribute object
 func (r *ProviderAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	// log := log.FromContext(ctx)
 
-	log.Info("ProviderAttr [" + req.Name + "] Reconciler started")
+	// log.Info("ProviderAttr [" + req.Name + "] Reconciler started")
 
-	// Fetch the ILPTask instance
-	providerAttr := &corev1alpha1.ProviderAttribute{}
-	err := r.Get(ctx, req.NamespacedName, providerAttr)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-		log.Error(err, "Unable to fetch ProviderAttr, something is wrong.")
-		return ctrl.Result{}, err
-	}
+	// // Fetch the ILPTask instance
+	// providerAttr := &corev1alpha1.ProviderAttribute{}
+	// err := r.Get(ctx, req.NamespacedName, providerAttr)
+	// if err != nil {
+	// 	if errors.IsNotFound(err) {
+	// 		return ctrl.Result{}, nil
+	// 	}
+	// 	log.Error(err, "Unable to fetch ProviderAttr, something is wrong.")
+	// 	return ctrl.Result{}, err
+	// }
 
 	// Fetch Provider Reference
-	providerRef := &corev1alpha1.Provider{}
-	if err = r.Get(ctx, types.NamespacedName{
-		Name:      providerAttr.Spec.ProviderReference.Name,
-		Namespace: providerAttr.Spec.ProviderReference.Namespace,
-	}, providerRef); err == nil {
-		log.Info("ProviderAttr [" + req.Name + "]: ProviderRef exists and was retrived")
-	} else {
-		log.Error(err, "ProviderAttr ["+req.Name+"]: Unable to fetch ProviderRef. Something is wrong.")
-		return ctrl.Result{}, err
-	}
+	// TODO: Remove this section. Providers are provided using configmaps
+	// providerRef := &corev1alpha1.Provider{}
+	// if err = r.Get(ctx, types.NamespacedName{
+	// 	Name:      providerAttr.Spec.ProviderReference.Name,
+	// 	Namespace: providerAttr.Spec.ProviderReference.Namespace,
+	// }, providerRef); err == nil {
+	// 	log.Info("ProviderAttr [" + req.Name + "]: ProviderRef exists and was retrived")
+	// } else {
+	// 	log.Error(err, "ProviderAttr ["+req.Name+"]: Unable to fetch ProviderRef. Something is wrong.")
+	// 	return ctrl.Result{}, err
+	// }
 
-	if err = controllerutil.SetControllerReference(providerRef, providerAttr, r.Scheme); err != nil {
-		log.Error(err, "Failed to set controller reference for ProviderAttr ["+req.Name+"]")
-		return ctrl.Result{}, err
-	}
-	err = r.Update(ctx, providerAttr)
-	if err != nil {
-		log.Error(err, "Failed to update ProviderAttr Controller Owner ["+req.Name+"]")
-		return ctrl.Result{}, err
-	}
+	// if err = controllerutil.SetControllerReference(providerRef, providerAttr, r.Scheme); err != nil {
+	// 	log.Error(err, "Failed to set controller reference for ProviderAttr ["+req.Name+"]")
+	// 	return ctrl.Result{}, err
+	// }
+	// err = r.Update(ctx, providerAttr)
+	// if err != nil {
+	// 	log.Error(err, "Failed to update ProviderAttr Controller Owner ["+req.Name+"]")
+	// 	return ctrl.Result{}, err
+	// }
 
 	return ctrl.Result{}, nil
 }

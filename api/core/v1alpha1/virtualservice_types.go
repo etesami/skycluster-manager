@@ -21,8 +21,8 @@ import (
 )
 
 type VServiceCost struct {
-	ProviderName string `json:"providerName"`
-	Cost         string `json:"cost"`
+	ProviderRef ProviderRef `json:"providerReference"`
+	Cost        string      `json:"cost"`
 }
 
 // VirtualServiceSpec defines the desired state of VirtualService

@@ -7,26 +7,32 @@ spec:
   namespace: default
   appConfig:
     - name: frontend
+      # following constraint will be honored and 
+      # if any of the constraints are not met, the deployment will fail
       constraints:
         locationConstraints:
-          - providerName: provider-1 # aws-west1, gcp-east1
-            region: west1 # east, west, north, south
-            providerType: cloud # near-the-edge, Cloud
-          - providerName: provider-1 # aws-west1, gcp-east1
+          # This is a composite constraints
+          - providerName: gcp
+            # This ensures the optimizer will only select gcp providers
+            # region: us-west1
+            # This ensures the optimizer will only select gcp providers in us-west1 region
+            # providerType: edge
+            # This ensures the optimizer will only select gcp providers in us-west1 of type edge
         virtualServiceConstraints:
-          - virtualServiceName: vs-1
+          - virtualServiceName: vs1
+          - virtualServiceName: vs2
     - name: backend
       constraints:
         locationConstraints:
-          - providerName: provider-2
+          - providerName: savi
         virtualServiceConstraints:
-          - virtualServiceName: vs-1
+          - virtualServiceName: vs1
     - name: payment
       constraints:
         locationConstraints:
-          - providerName: provider-3
+          - providerName: provider100
         virtualServiceConstraints:
-          - virtualServiceName: vs-1
+          - virtualServiceName: vs3
 ---
 apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 kind: DataflowAttribute
@@ -39,53 +45,13 @@ spec:
       destinations:
         - name: backend
           constraints:
-            latency: 10ms
+            latency: 500ms
     - source: backend
       destinations:
         - name: payment
           constraints:
-            latency: 10ms
+            latency: 500ms
 ---
-# ################ VIRTUAL SERVICES ################
-# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-# kind: VirtualService
-# metadata:
-#   name: virtualservice-sample
-# spec:
-#   name: vs1
-#   vservicecosts:
-#     - providerName: aws-east1
-#       cost: "100"
-#     - providerName: aws-west1
-#       cost: "200"
-# ---
-# ################ ProviderAttribute ################
-# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-# kind: ProviderAttribute
-# metadata:
-#   name: pattr-aws-east1-aws-west1
-# spec:
-#   providerReference:
-#     name: aws-east1
-#     namespace: default
-#   providerMetrics:
-#     - dstProviderName: aws-west1
-#       latency: 10ms
-#       egressDataCost: "100"
-# ---
-# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-# kind: ProviderAttribute
-# metadata:
-#   name: pattr-aws-west1-aws-east1
-# spec:
-#   providerReference:
-#     name: aws-west1
-#     namespace: default
-#   providerMetrics:
-#     - dstProviderName: aws-east1
-#       latency: 10ms
-#       egressDataCost: "100"
-# ---
 # apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 # kind: ILPTask
 # metadata:

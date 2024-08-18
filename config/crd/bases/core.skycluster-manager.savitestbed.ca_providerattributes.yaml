@@ -42,25 +42,39 @@ spec:
               providerMetrics:
                 items:
                   properties:
-                    dstProviderName:
-                      type: string
+                    dstProviderReference:
+                      properties:
+                        name:
+                          type: string
+                        region:
+                          type: string
+                        type:
+                          type: string
+                      required:
+                      - name
+                      - region
+                      - type
+                      type: object
                     egressDataCost:
                       type: string
                     latency:
                       type: string
                   required:
-                  - dstProviderName
+                  - dstProviderReference
                   type: object
                 type: array
               providerReference:
                 properties:
                   name:
                     type: string
-                  namespace:
+                  region:
+                    type: string
+                  type:
                     type: string
                 required:
                 - name
-                - namespace
+                - region
+                - type
                 type: object
             required:
             - providerMetrics

@@ -46,11 +46,22 @@ spec:
                   properties:
                     cost:
                       type: string
-                    providerName:
-                      type: string
+                    providerReference:
+                      properties:
+                        name:
+                          type: string
+                        region:
+                          type: string
+                        type:
+                          type: string
+                      required:
+                      - name
+                      - region
+                      - type
+                      type: object
                   required:
                   - cost
-                  - providerName
+                  - providerReference
                   type: object
                 type: array
             required:

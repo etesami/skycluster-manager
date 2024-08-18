@@ -190,13 +190,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ILPTask")
 		os.Exit(1)
 	}
-	if err = (&corecontroller.ProviderReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Provider")
-		os.Exit(1)
-	}
 	if err = (&corecontroller.VirtualServiceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

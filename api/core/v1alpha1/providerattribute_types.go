@@ -21,9 +21,9 @@ import (
 )
 
 type ProviderMetrics struct {
-	DstProviderName string `json:"dstProviderName"`
-	Latency         string `json:"latency,omitempty"`
-	EgressDataCost  string `json:"egressDataCost,omitempty"`
+	DstProviderRef ProviderRef `json:"dstProviderReference"`
+	Latency        string      `json:"latency,omitempty"`
+	EgressDataCost string      `json:"egressDataCost,omitempty"`
 }
 
 // ProviderAttributeSpec defines the desired state of ProviderAttribute

@@ -3,7 +3,6 @@
 # It should be run by config/default
 resources:
 - bases/core.skycluster-manager.savitestbed.ca_ilptasks.yaml
-- bases/core.skycluster-manager.savitestbed.ca_providers.yaml
 - bases/core.skycluster-manager.savitestbed.ca_virtualservices.yaml
 - bases/core.skycluster-manager.savitestbed.ca_skyapps.yaml
 - bases/core.skycluster-manager.savitestbed.ca_providerattributes.yaml

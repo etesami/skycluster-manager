@@ -195,7 +195,11 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				// iterate over the providers and create a configmap for each
 				providersData := ""
 				for i, thisProvider := range providers.Items {
-					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierName] + ","
+					providerName := thisProvider.GetAnnotations()[SkyClusterAnnotationProvierName]
+					providerNameCombined := thisProvider.GetAnnotations()[SkyClusterAnnotationProvierName] +
+						thisProvider.GetAnnotations()[SkyClusterAnnotationProvierRegion] +
+						thisProvider.GetAnnotations()[SkyClusterAnnotationProvierType]
+					providersData += providerNameCombined + "," + providerName + ","
 					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierRegion] + ","
 					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierZone] + ","
 					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierType]
@@ -247,10 +251,14 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// iterate over the providerAttrs and create a configmap for each
 			providerAttrData := ""
 			for i, providerAttr := range providerAttrs.Items {
-				currentNode := providerAttr.Spec.ProviderReference
+				currentNodeName := providerAttr.Spec.ProviderReference.Name +
+					providerAttr.Spec.ProviderReference.Region +
+					providerAttr.Spec.ProviderReference.Type
 				for j, destnationNode := range providerAttr.Spec.ProviderMetrics {
-					providerAttrData += currentNode.Name + ":"
-					providerAttrData += destnationNode.DstProviderName
+					providerAttrData += currentNodeName + ":"
+					providerAttrData += destnationNode.DstProviderRef.Name +
+						destnationNode.DstProviderRef.Region +
+						destnationNode.DstProviderRef.Type
 					providerAttrData += "," + destnationNode.Latency
 					providerAttrData += "," + destnationNode.EgressDataCost
 					if j < len(providerAttr.Spec.ProviderMetrics)-1 {
@@ -280,7 +288,9 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				for i, thisProvider := range vservices.Items {
 					for j, thisVServiceProvider := range thisProvider.Spec.VServiceCosts {
 						vservicesData += thisProvider.Spec.Name + ":"
-						vservicesData += thisVServiceProvider.ProviderName
+						vservicesData += thisVServiceProvider.ProviderRef.Name +
+							thisVServiceProvider.ProviderRef.Region +
+							thisVServiceProvider.ProviderRef.Type
 						vservicesData += "," + thisVServiceProvider.Cost
 						if j < len(thisProvider.Spec.VServiceCosts)-1 {
 							vservicesData += "\n"
@@ -414,6 +424,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Requeue to check the Pod status later
 			log.Info("ILPTask [" + req.Name + "] Requeue to check optimizer Pod status")
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+			// return ctrl.Result{}, nil
 		}
 		log.Error(err, "Pod exists but I am unable to get optimizer Pod")
 		return ctrl.Result{}, err
