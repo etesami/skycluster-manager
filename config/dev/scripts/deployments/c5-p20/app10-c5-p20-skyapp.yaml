@@ -1,0 +1,38 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: SkyApp
+metadata:
+  name: app10-c5-p20-skyapp
+spec:
+  appConfig:
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C1
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C2
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C3
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs3
+    name: C4
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs4
+    name: C5
+  appName: app10-c5-p20-skyapp
+  namespace: default

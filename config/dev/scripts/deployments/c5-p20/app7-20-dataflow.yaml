@@ -1,0 +1,27 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: DataflowAttribute
+metadata:
+  name: app7-c5-p20-skyapp
+spec:
+  appName: app7-c5-p20-skyapp
+  connections:
+  - destinations:
+    - constraints:
+        latency: 155ms
+      name: C3
+    source: C1
+  - destinations:
+    - constraints:
+        latency: 909ms
+      name: C4
+    source: C2
+  - destinations:
+    - constraints:
+        latency: 497ms
+      name: C5
+    source: C3
+  - destinations:
+    - constraints:
+        latency: 403ms
+      name: C5
+    source: C4

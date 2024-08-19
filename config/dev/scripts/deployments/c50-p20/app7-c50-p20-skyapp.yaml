@@ -1,0 +1,308 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: SkyApp
+metadata:
+  name: app7-c50-p20-skyapp
+spec:
+  appConfig:
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C1
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C2
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs3
+    name: C3
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs1
+    name: C4
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs4
+    name: C5
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C6
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C7
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs3
+    name: C8
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs3
+    name: C9
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C10
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C11
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs1
+    name: C12
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs3
+    name: C13
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs1
+    name: C14
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C15
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs4
+    name: C16
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs3
+    name: C17
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs1
+    name: C18
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs4
+    name: C19
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C20
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs1
+    name: C21
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C22
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs4
+    name: C23
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C24
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C25
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C26
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C27
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs4
+    name: C28
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs1
+    name: C29
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C30
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C31
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C32
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C33
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs1
+    name: C34
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C35
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C36
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C37
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C38
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C39
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs3
+    name: C40
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C41
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs4
+    name: C42
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs1
+    name: C43
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs1
+    name: C44
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C45
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C46
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C47
+  - constraints:
+      locationConstraints:
+      - providerType: edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs5
+    name: C48
+  - constraints:
+      locationConstraints:
+      - providerType: near-the-edge
+      virtualServiceConstraints:
+      - virtualServiceName: vs3
+    name: C49
+  - constraints:
+      locationConstraints:
+      - providerType: cloud
+      virtualServiceConstraints:
+      - virtualServiceName: vs2
+    name: C50
+  appName: app7-c50-p20-skyapp
+  namespace: default
