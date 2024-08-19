@@ -121,7 +121,6 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Define the Pod name
-	// podName := fmt.Sprintf("%s-ilptaskr", ilptask.Name)
 	podName := ilptask.Spec.AppName
 
 	// Check if the Pod exists
@@ -201,6 +200,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 						thisProvider.GetAnnotations()[SkyClusterAnnotationProvierType]
 					providersData += providerNameCombined + "," + providerName + ","
 					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierRegion] + ","
+					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationSkyClusterRegion] + ","
 					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierZone] + ","
 					providersData += thisProvider.GetAnnotations()[SkyClusterAnnotationProvierType]
 					if i < len(providers.Items)-1 {
@@ -430,57 +430,44 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	// if Pod exists, check its status
-	if pod.Status.Phase == corev1.PodSucceeded {
-		log.Info("ILPTask [" + req.Name + "] Optimizer Pod exists, checking status...")
-		// Pod completed successfully, get its logs
+	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+		log.Info("ILPTask [" + req.Name + "] Updating ILPTask annotations")
+		ilptask.Annotations[SkyClusterAnnotationCompletionTime] = time.Now().Format(time.RFC3339)
+		if err = r.Update(ctx, ilptask); err != nil {
+			log.Error(err, "Unable to update ILPTask")
+			return ctrl.Result{}, err
+		}
 
-		// Update the ILPTask status
-		ilptask.Status.Result = "Completed"
+		if pod.Status.Phase == corev1.PodSucceeded {
+			log.Info("ILPTask [" + req.Name + "] Optimizer Pod succeeded!")
+			ilptask.Status.Result = "Completed"
+		} else {
+			log.Info("ILPTask [" + req.Name + "] Optimizer Pod failed")
+			ilptask.Status.Result = "Failed"
+		}
+
 		if ilptask.Status.Solution, err = r.getPodLogs(ctx, pod); err != nil {
 			log.Error(err, "Unable to get Pod logs")
 			// return ctrl.Result{}, err
 		}
-		err = r.Status().Update(ctx, ilptask)
-		if err != nil {
+		if err := r.Status().Update(ctx, ilptask); err != nil {
 			log.Error(err, "Unable to update ILPTask status")
 			return ctrl.Result{}, err
 		}
-		log.Info("ILPTask [" + req.Name + "] Optimizer Pod completed")
+		log.Info("ILPTask [" + req.Name + "] Status updated!")
 
 		// Delete the completed Pod
 		err = r.Delete(ctx, pod)
-		log.Info("ILPTask ["+req.Name+"] Deleting completed Pod", "name", pod.Name)
+		log.Info("ILPTask [" + req.Name + "] Deleting completed Pod")
 		if err != nil {
 			log.Error(err, "Unable to delete completed Pod")
-			// Don't return an error, as the main task is done
-		}
-		return ctrl.Result{}, nil
-
-	} else if pod.Status.Phase == corev1.PodFailed {
-		// Pod failed, update the ILPTask status with the failure
-		log.Info("ILPTask [" + req.Name + "] Optimizer Pod failed")
-		ilptask.Status.Result = "Failed"
-		if ilptask.Status.Solution, err = r.getPodLogs(ctx, pod); err != nil {
-			log.Error(err, "Unable to get Pod logs")
-		}
-		err = r.Status().Update(ctx, ilptask)
-		if err != nil {
-			log.Error(err, "Unable to update ILPTask status")
-			// return ctrl.Result{}, err
-		}
-		// Delete the failed Pod
-		log.Info("Deleting failed Pod", "name", pod.Name)
-		err = r.Delete(ctx, pod)
-		if err != nil {
-			log.Error(err, "Unable to delete failed Pod")
 			// Don't return an error, as the main task is done
 		}
 		return ctrl.Result{}, nil
 	}
 
 	// Pod is still running, requeue
-	return ctrl.Result{RequeueAfter: time.Second * 6}, nil
+	return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 }
 
 // write a function to create a configmap given the content of the file

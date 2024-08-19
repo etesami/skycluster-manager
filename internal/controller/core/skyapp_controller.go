@@ -18,6 +18,7 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -69,6 +70,7 @@ func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			ilptask.Annotations = make(map[string]string)
 			ilptask.Annotations[SkyClusterAnnotationManagedBy] = "skycluster-manager"
 			ilptask.Annotations[SkyClusterAnnotationConfigType] = "ilp-task"
+			ilptask.Annotations[SkyClusterAnnotationCreationTime] = time.Now().Format(time.RFC3339)
 			ilptask.Spec.AppName = skyapp.Spec.AppName
 			ilptask.ObjectMeta.Name = skyapp.Spec.AppName
 			ilptask.ObjectMeta.Namespace = skyapp.Namespace
@@ -100,6 +102,7 @@ func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		ilptask.Annotations[SkyClusterAnnotationManagedBy] = "skycluster-manager"
 		ilptask.Annotations[SkyClusterAnnotationConfigType] = "ilp-task"
+		ilptask.Annotations[SkyClusterAnnotationCreationTime] = time.Now().Format(time.RFC3339)
 		ilptask.Spec.SkyAppRef.Name = skyapp.Name
 		ilptask.Spec.SkyAppRef.Namespace = skyapp.Namespace
 		if err = controllerutil.SetControllerReference(skyapp, ilptask, r.Scheme); err != nil {

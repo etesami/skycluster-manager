@@ -87,12 +87,16 @@ class Provider:
 		self.region = ""
 		self.zone = ""
 		self.providerType = ""
+		self.skycluster_region = ""
 
 	def set_provider_name(self, name):
 		self.name_base = name
 			
 	def set_region(self, region):
 		self.region = region
+	
+	def set_skycluster_region(self, skycluster_region):
+		self.skycluster_region = skycluster_region
 	
 	def set_zone(self, zone):
 		self.zone = zone
@@ -168,6 +172,8 @@ for v in V:
 				totalPPCost += float(tvs.get_costs()[ppName])
 			else:
 				providerSelected = False
+				# ensure this provider is not selected
+				prob += c[v.name][ppName] == 0
 				# print(ppName, 'does not offer', tvs.name, '[SKIP]')
 				# this provider does not offer at least one vs, we skip it
 				break
@@ -245,7 +251,7 @@ for v in V:
 			# print("	 ", pp, end = ' ')
 			if ((locName != "" and locName != providers[pp].name_base) or
 				(locType != "" and locType != providers[pp].providerType) or
-				(locRegion != "" and locRegion != providers[pp].region)):
+				(locRegion != "" and locRegion != providers[pp].skycluster_region)):
 					# make it zerp
 				prob += c[v.name][pp] == 0
 `
@@ -263,8 +269,9 @@ with open(filename, 'r') as file:
 		pp = Provider(provider_name)
 		pp.set_provider_name(line.strip().split(",")[1])
 		pp.set_region(line.strip().split(",")[2])
-		pp.set_zone(line.strip().split(",")[3])
-		pp.set_providerType(line.strip().split(",")[4])
+		pp.set_skycluster_region(line.strip().split(",")[3])
+		pp.set_zone(line.strip().split(",")[4])
+		pp.set_providerType(line.strip().split(",")[5])
 		providers[provider_name] = pp
 
 vservices = {}
