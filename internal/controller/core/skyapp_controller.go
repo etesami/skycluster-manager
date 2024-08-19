@@ -65,6 +65,10 @@ func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		if errors.IsNotFound(err) {
 			log.Info("SkyApp [" + skyapp.Spec.AppName + "] ilptask not found. Creating it...")
+			// set annotations
+			ilptask.Annotations = make(map[string]string)
+			ilptask.Annotations[SkyClusterAnnotationManagedBy] = "skycluster-manager"
+			ilptask.Annotations[SkyClusterAnnotationConfigType] = "ilp-task"
 			ilptask.Spec.AppName = skyapp.Spec.AppName
 			ilptask.ObjectMeta.Name = skyapp.Spec.AppName
 			ilptask.ObjectMeta.Namespace = skyapp.Namespace
@@ -91,6 +95,11 @@ func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	} else {
 		// Update the object with reference to skyapp object
+		if ilptask.Annotations == nil {
+			ilptask.Annotations = make(map[string]string)
+		}
+		ilptask.Annotations[SkyClusterAnnotationManagedBy] = "skycluster-manager"
+		ilptask.Annotations[SkyClusterAnnotationConfigType] = "ilp-task"
 		ilptask.Spec.SkyAppRef.Name = skyapp.Name
 		ilptask.Spec.SkyAppRef.Namespace = skyapp.Namespace
 		if err = controllerutil.SetControllerReference(skyapp, ilptask, r.Scheme); err != nil {

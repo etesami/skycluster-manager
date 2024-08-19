@@ -4,6 +4,7 @@ var pythonBaseScript string = `
 import numpy as np
 import collections
 import pulp
+import json
 
 class Task:
 	def __init__(self, name):
@@ -362,6 +363,6 @@ if pulp.LpStatus[prob.status] == 'Optimal':
 				res['providerType'] = providers[ll].providerType
 				result['tasks'][v.name].append(res)
 
-print(result)
+print(json.dumps(result))
 
 `
