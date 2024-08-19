@@ -1,0 +1,26 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: SkyApp
+metadata:
+  name: app4-50-skyapp
+spec:
+  appName: app4-50-skyapp
+  namespace: default
+  appConfig:
+    - name: frontend
+      constraints:
+        locationConstraints:
+          - providerType: cloud
+        virtualServiceConstraints:
+          - virtualServiceName: vs1
+    - name: backend
+      constraints:
+        locationConstraints:
+          - providerType: cloud
+        virtualServiceConstraints:
+          - virtualServiceName: vs2
+    - name: payment
+      constraints:
+        locationConstraints:
+          - providerType: cloud
+        virtualServiceConstraints:
+          - virtualServiceName: vs3

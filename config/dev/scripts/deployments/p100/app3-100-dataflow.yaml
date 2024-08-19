@@ -1,0 +1,17 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: DataflowAttribute
+metadata:
+  name: app3-100-dataflow
+spec:
+  appName: app3-100-skyapp
+  connections:
+    - source: frontend
+      destinations:
+        - name: backend
+          constraints:
+            latency: 500ms
+    - source: backend
+      destinations:
+        - name: payment
+          constraints:
+            latency: 500ms
