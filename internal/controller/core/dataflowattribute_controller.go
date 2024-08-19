@@ -74,7 +74,26 @@ func (r *DataflowAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			if err != nil {
 				// check if error is already exists error
 				if errors.IsAlreadyExists(err) {
-					log.Info("ILPTask [" + dataflowattr.Spec.AppName + "] already exists")
+					log.Info("DataflowAttr [" + dataflowattr.Spec.AppName + "] already exists, checking the references")
+					// Update the object with reference to dataflowattr object
+					if err := r.Get(ctx, client.ObjectKey{
+						Namespace: dataflowattr.Namespace,
+						Name:      dataflowattr.Spec.AppName,
+					}, ilptask); err != nil {
+						log.Error(err, "Failed to fetch ILPTask ["+dataflowattr.Spec.AppName+"]")
+						return ctrl.Result{}, err
+					}
+					if ilptask.Spec.DataflowAttributeRef.Name != dataflowattr.Name ||
+						ilptask.Spec.DataflowAttributeRef.Namespace != dataflowattr.Namespace {
+						log.Info("DataflowAttr [" + dataflowattr.Spec.AppName + "] references are not correct, updating it...")
+						ilptask.Spec.DataflowAttributeRef.Name = dataflowattr.Name
+						ilptask.Spec.DataflowAttributeRef.Namespace = dataflowattr.Namespace
+						if err := r.Update(ctx, ilptask); err != nil {
+							log.Error(err, "Failed to update ILPTask ["+dataflowattr.Spec.AppName+"]")
+							return ctrl.Result{}, err
+						}
+						return ctrl.Result{}, nil
+					}
 					return ctrl.Result{}, nil
 				}
 				log.Error(err, "Failed to create ILPTask ["+dataflowattr.Spec.AppName+"]")
@@ -89,8 +108,7 @@ func (r *DataflowAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		// Update the object with reference to dataflowattr object
 		ilptask.Spec.DataflowAttributeRef.Name = dataflowattr.Name
 		ilptask.Spec.DataflowAttributeRef.Namespace = dataflowattr.Namespace
-		err = r.Update(ctx, ilptask)
-		if err != nil {
+		if err := r.Update(ctx, ilptask); err != nil {
 			log.Error(err, "Failed to update ILPTask ["+dataflowattr.Spec.AppName+"]")
 			return ctrl.Result{}, err
 		}

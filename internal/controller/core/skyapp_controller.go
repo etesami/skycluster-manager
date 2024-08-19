@@ -85,6 +85,24 @@ func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			if err != nil {
 				if errors.IsAlreadyExists(err) {
 					log.Info("ILPTask [" + skyapp.Spec.AppName + "] already exists")
+					// Update the object with reference to dataflowattr object
+					if err := r.Get(ctx, client.ObjectKey{
+						Namespace: skyapp.Namespace,
+						Name:      skyapp.Spec.AppName,
+					}, ilptask); err != nil {
+						log.Error(err, "Failed to fetch ILPTask ["+skyapp.Spec.AppName+"]")
+						return ctrl.Result{}, err
+					}
+					if ilptask.Spec.SkyAppRef.Name != skyapp.Name ||
+						ilptask.Spec.SkyAppRef.Namespace != skyapp.Namespace {
+						log.Info("SkyApp [" + skyapp.Spec.AppName + "] references are not correct, updating it...")
+						ilptask.Spec.SkyAppRef.Name = skyapp.Name
+						ilptask.Spec.SkyAppRef.Namespace = skyapp.Namespace
+						if err := r.Update(ctx, ilptask); err != nil {
+							log.Error(err, "Failed to update ILPTask ["+skyapp.Spec.AppName+"]")
+							return ctrl.Result{}, err
+						}
+					}
 					return ctrl.Result{}, nil
 				}
 				log.Error(err, "Failed to create ILPTask ["+skyapp.Spec.AppName+"]")
