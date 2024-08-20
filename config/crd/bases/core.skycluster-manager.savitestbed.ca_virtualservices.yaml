@@ -41,6 +41,18 @@ spec:
             properties:
               name:
                 type: string
+              vserviceCompositions:
+                items:
+                  properties:
+                    apiVersion:
+                      type: string
+                    kind:
+                      type: string
+                  required:
+                  - apiVersion
+                  - kind
+                  type: object
+                type: array
               vservicecosts:
                 items:
                   properties:

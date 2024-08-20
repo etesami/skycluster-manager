@@ -64,6 +64,7 @@ func (r *DataflowAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if err != nil {
 		if errors.IsNotFound(err) {
 			log.Info("DataflowAttr [" + dataflowattr.Spec.AppName + "] not found. Creating it...")
+			ilptask.Annotations = make(map[string]string)
 			ilptask.ObjectMeta.Name = dataflowattr.Spec.AppName
 			ilptask.ObjectMeta.Namespace = dataflowattr.Namespace
 			ilptask.Spec.AppName = dataflowattr.Spec.AppName

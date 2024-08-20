@@ -56,7 +56,8 @@ func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Check if ILPTask exists, if not create it
-	// Update the object with reference to skyapp object
+	// If it exists, it means dataflow controller has created the object
+	// and we need to pdate the object with reference to skyapp object
 
 	ilptask := &corev1alpha1.ILPTask{}
 	err = r.Get(ctx, client.ObjectKey{
@@ -113,7 +114,8 @@ func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			log.Error(err, "Failed to fetch ILPTask ["+skyapp.Spec.AppName+"]")
 			return ctrl.Result{}, err
 		}
-	} else {
+	} else if ilptask.Spec.SkyAppRef.Name != skyapp.Name ||
+		ilptask.Spec.SkyAppRef.Namespace != skyapp.Namespace {
 		// Update the object with reference to skyapp object
 		if ilptask.Annotations == nil {
 			ilptask.Annotations = make(map[string]string)
@@ -132,6 +134,14 @@ func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			log.Error(err, "Failed to update ILPTask ["+skyapp.Spec.AppName+"]")
 			return ctrl.Result{}, err
 		}
+	} else {
+		// The object is already created and updated
+		// something else has triggered the reconcile
+		// This is particularly useful when the object is updated by the user
+		// or by another controller, for example, when the result of optimization
+		// is ready the Status.DeployPlan field is changed.
+
+		log.Info("SkyApp [" + skyapp.Spec.AppName + "] already exists, nothing to do now.")
 	}
 
 	return ctrl.Result{}, nil

@@ -24,15 +24,6 @@ resources:
   controller: true
   domain: skycluster-manager.savitestbed.ca
   group: core
-  kind: Provider
-  path: github.com/etesami/skycluster-manager/api/core/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: skycluster-manager.savitestbed.ca
-  group: core
   kind: VirtualService
   path: github.com/etesami/skycluster-manager/api/core/v1alpha1
   version: v1alpha1
@@ -92,5 +83,14 @@ resources:
   group: policy
   kind: DataflowAttribute
   path: github.com/etesami/skycluster-manager/api/policy/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: skycluster-manager.savitestbed.ca
+  group: core
+  kind: SkyXRD
+  path: github.com/etesami/skycluster-manager/api/core/v1alpha1
   version: v1alpha1
 version: "3"

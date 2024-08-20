@@ -20,28 +20,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type VServiceComposition struct {
-	APIVersion string `json:"apiVersion"`
-	Kind       string `json:"kind"`
-}
-
-type VServiceCost struct {
-	ProviderRef ProviderRef `json:"providerReference"`
-	Cost        string      `json:"cost"`
-}
-
-// VirtualServiceSpec defines the desired state of VirtualService
-type VirtualServiceSpec struct {
+// SkyXRDSpec defines the desired state of SkyXRD
+type SkyXRDSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Name                string                `json:"name"`
-	VServiceCosts       []VServiceCost        `json:"vservicecosts,omitempty"`
-	VServiceComposition []VServiceComposition `json:"vserviceCompositions,omitempty"`
+	// Foo is an example field of SkyXRD. Edit skyxrd_types.go to remove/update
+	AppName       string        `json:"appName"`
+	SkyAppRefName string        `json:"skyAppRef"`
+	TaskPlacement TaskPlacement `json:"deploymentPlan,omitempty"`
 }
 
-// VirtualServiceStatus defines the observed state of VirtualService
-type VirtualServiceStatus struct {
+// SkyXRDStatus defines the observed state of SkyXRD
+type SkyXRDStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -49,24 +40,24 @@ type VirtualServiceStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// VirtualService is the Schema for the virtualservices API
-type VirtualService struct {
+// SkyXRD is the Schema for the skyxrds API
+type SkyXRD struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   VirtualServiceSpec   `json:"spec,omitempty"`
-	Status VirtualServiceStatus `json:"status,omitempty"`
+	Spec   SkyXRDSpec   `json:"spec,omitempty"`
+	Status SkyXRDStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// VirtualServiceList contains a list of VirtualService
-type VirtualServiceList struct {
+// SkyXRDList contains a list of SkyXRD
+type SkyXRDList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []VirtualService `json:"items"`
+	Items           []SkyXRD `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&VirtualService{}, &VirtualServiceList{})
+	SchemeBuilder.Register(&SkyXRD{}, &SkyXRDList{})
 }

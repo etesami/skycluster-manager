@@ -19,6 +19,7 @@ package core
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"strings"
 	"time"
@@ -113,11 +114,28 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// if not, check if any pod is running
 	// if not, create a pod to run the optimizer
 
+	taskCompleted := false
 	// Check if the optimization is already completed
 	// if it is completed, the Status is not nil
 	if ilptask.Status.Result != "" {
+		// TODO: If the ilptask is changed, we may need to recalulate the optimization
+		// For now, we are assuming that the optimization is done once and the result is final
+		// Cases to consider:
+		// 1. SkyApp or DataflowAttribute are updated: the optimization should be recalculated
+		// 2. Changes within underlay resources
+		//    - VirtualService/Region is not available
+		//      In this case, a vistual service (and the provider) should reflect this failure and we should remove
+		//      the virtual service from the optimization.
+		//      Someone flags the virtual service (it is a configmap now)
+		//              The ilptask shoould be flagged as incompleted
+		//              The reconcile function and the optimizer should be re-run
 		log.Info("ILPTask [" + req.Name + "] task already completed or has a result")
-		return ctrl.Result{}, nil
+		// TODO: Remove the flag and return
+		// I use a flag now to test the reconciliation loop when the task is completed
+		// but normally when the task isc completed we don't need to do that
+		// unless the problem formulation is changed
+		taskCompleted = true
+		// return ctrl.Result{}, nil
 	}
 
 	// Define the Pod name
@@ -126,7 +144,8 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Check if the Pod exists
 	pod := &corev1.Pod{}
 	err = r.Get(ctx, types.NamespacedName{Name: podName, Namespace: ilptask.Namespace}, pod)
-	if err != nil {
+	// TODO: Remove the flag taskCompleted
+	if !taskCompleted && err != nil {
 		if errors.IsNotFound(err) {
 			// Pod doesn't exist, create it
 			log.Info("ILPTask [" + req.Name + "] Creating optimizer Pod")
@@ -182,6 +201,10 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			// Get providers data
+			// TODO: The providers should be accessible and available
+			//    Currently a provider is a configmap and it should contain a field
+			//    that indicates if the provider is available or not, we should only select
+			//    the available providers.
 			// Filter based on the labels
 			if providers, err := r.Clientset.ConfigMaps("").List(ctx, metav1.ListOptions{
 				LabelSelector: SkyClusterAnnotationManagedBy + "=skycluster," +
@@ -213,31 +236,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 			}
 
-			// providers := &corev1alpha1.ProviderList{}
-			// listOps := &client.ListOptions{
-			// 	Namespace: ilptask.Namespace,
-			// }
-			// if err := r.List(ctx, providers, listOps); err != nil {
-			// 	log.Error(err, "Unable to get providers")
-			// 	return ctrl.Result{}, err
-			// } else {
-			// 	// iterate over the providers and create a configmap for each
-			// 	providersData := ""
-			// 	for i, thisProvider := range providers.Items {
-			// 		providersData += thisProvider.Spec.Name + ","
-			// 		providersData += thisProvider.Spec.Region + ","
-			// 		providersData += thisProvider.Spec.Zone + ","
-			// 		providersData += thisProvider.Spec.Type
-			// 		if i < len(providers.Items)-1 {
-			// 			providersData += "\n"
-			// 		}
-			// 	}
-			// 	if err = r.createConfigMap(ctx, ilptask.Spec.AppName+"-providers", providersData, ilptask); err != nil {
-			// 		log.Error(err, "Unable to create ConfigMap for providers")
-			// 		return ctrl.Result{}, err
-			// 	}
-			// }
-
+			// TODO: we may need to discard providers attribute that are not available
 			// Fetch the ProviderAttribute instance
 			// Assuming there is one instance of this type (part of TODO list)
 			providerAttrs := &corev1alpha1.ProviderAttributeList{}
@@ -276,6 +275,8 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			// get virtual service data
+			// TODO: The virtual services should be accessible and available
+			//    Similar to providers we may need to filter the virtual services
 			vservices := &corev1alpha1.VirtualServiceList{}
 			if err := r.List(ctx, vservices, &client.ListOptions{
 				Namespace: ilptask.Namespace,
@@ -430,8 +431,12 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	// TODO: we have the results
 	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
 		log.Info("ILPTask [" + req.Name + "] Updating ILPTask annotations")
+		if ilptask.Annotations == nil {
+			ilptask.Annotations = make(map[string]string)
+		}
 		ilptask.Annotations[SkyClusterAnnotationCompletionTime] = time.Now().Format(time.RFC3339)
 		if err = r.Update(ctx, ilptask); err != nil {
 			log.Error(err, "Unable to update ILPTask")
@@ -466,6 +471,72 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
+	// check if the ILPTask has a result
+	if taskCompleted && ilptask.Status.Result != "" {
+		var result corev1alpha1.TaskPlacement
+		// Assuming the pod log is a JSON string (it should be a json string unless something is wrong)
+		// Parse the JSON string
+		if err := json.Unmarshal([]byte(ilptask.Status.Solution), &result); err != nil {
+			log.Error(err, "Unable to parse the JSON string")
+			return ctrl.Result{}, err
+		}
+
+		// TODO: When there is a optimization result, we should propagate the result to the SkyXRD object
+		// Below there are some comments on how to do this.
+
+		// 1. We should call XProviderSetup XRD for each distinct provider (provider, region, type)
+		//    To do so, first we need to update SkyApp with results of the optimization
+		//    and then the SkyApp controller take care of creating other XRD objects.
+		//    (or maybe ILPTask controller can directly create the an object containing the
+		//   	optimization results. This may be better as the tasks are kept separate from the
+		//   	SkyApp controller. Will investigate this later.)
+
+		//    For simplicity, I can create a new controller: SkyXRD controller
+		//    and a new object of this type is created when the optimization results are ready.
+
+		// create SkyXRD object with optimization results
+
+		skyxrd := &corev1alpha1.SkyXRD{}
+		if err := r.Get(ctx, client.ObjectKey{
+			Namespace: skyapp.Namespace,
+			Name:      skyapp.Spec.AppName,
+		}, skyxrd); err != nil {
+			if errors.IsNotFound(err) {
+				// SkyXRD doesn't exist, create it
+				log.Info("ILPTask [" + skyapp.Spec.AppName + "] SkyXRD doesn't exist, creating it")
+				skyxrd = &corev1alpha1.SkyXRD{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      skyapp.Spec.AppName,
+						Namespace: skyapp.Namespace,
+					},
+					Spec: corev1alpha1.SkyXRDSpec{
+						AppName:       skyapp.Spec.AppName,
+						SkyAppRefName: skyapp.Name,
+						TaskPlacement: result,
+					},
+				}
+				if err := controllerutil.SetControllerReference(skyapp, skyxrd, r.Scheme); err != nil {
+					log.Error(err, "Failed to set owner reference on SkyXRD")
+					return ctrl.Result{}, err
+				}
+				if err := r.Create(ctx, skyxrd); err != nil {
+					log.Error(err, "Failed to create SkyXRD")
+					return ctrl.Result{}, err
+				}
+			} else {
+				log.Error(err, "Failed to fetch SkyXRD, Unknown error occurred")
+				return ctrl.Result{}, err
+			}
+		} else {
+			// skyxrd exists,
+			// TODO: we may need to update it if the optimization results is changed
+			log.Info("ILPTask [" + skyapp.Spec.AppName + "] SkyXRD exists")
+		}
+
+		// define a temp type to hold the result
+		log.Info("ILPTask [" + skyapp.Spec.AppName + "] Status: " + result.Status)
+		return ctrl.Result{}, nil
+	}
 	// Pod is still running, requeue
 	return ctrl.Result{RequeueAfter: time.Second * 2}, nil
 }

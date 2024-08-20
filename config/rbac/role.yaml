@@ -85,6 +85,32 @@ rules:
 - apiGroups:
   - core.skycluster-manager.savitestbed.ca
   resources:
+  - skyxrds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyxrds/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyxrds/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
   - virtualservices
   verbs:
   - create
@@ -134,3 +160,15 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - xrds.skycluster.savitestbed.ca
+  resources:
+  - xprovidersetups/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

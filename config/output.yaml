@@ -359,6 +359,90 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
+  name: skyxrds.core.skycluster-manager.savitestbed.ca
+spec:
+  group: core.skycluster-manager.savitestbed.ca
+  names:
+    kind: SkyXRD
+    listKind: SkyXRDList
+    plural: skyxrds
+    singular: skyxrd
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SkyXRD is the Schema for the skyxrds API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SkyXRDSpec defines the desired state of SkyXRD
+            properties:
+              appName:
+                description: Foo is an example field of SkyXRD. Edit skyxrd_types.go
+                  to remove/update
+                type: string
+              deploymentPlan:
+                properties:
+                  status:
+                    type: string
+                  tasks:
+                    additionalProperties:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          region:
+                            type: string
+                          type:
+                            type: string
+                        required:
+                        - name
+                        - region
+                        - type
+                        type: object
+                      type: array
+                    type: object
+                required:
+                - status
+                - tasks
+                type: object
+              skyAppRef:
+                type: string
+            required:
+            - appName
+            - skyAppRef
+            type: object
+          status:
+            description: SkyXRDStatus defines the observed state of SkyXRD
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: virtualservices.core.skycluster-manager.savitestbed.ca
 spec:
   group: core.skycluster-manager.savitestbed.ca
@@ -396,6 +480,18 @@ spec:
             properties:
               name:
                 type: string
+              vserviceCompositions:
+                items:
+                  properties:
+                    apiVersion:
+                      type: string
+                    kind:
+                      type: string
+                  required:
+                  - apiVersion
+                  - kind
+                  type: object
+                type: array
               vservicecosts:
                 items:
                   properties:
@@ -787,6 +883,56 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-skyxrd-editor-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - xkyxrds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - xkyxrds/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
+  name: skycluster-manager-core-skyxrd-viewer-role
+rules:
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - xkyxrds
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - xkyxrds/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: skycluster-manager
   name: skycluster-manager-core-virtualservice-editor-role
 rules:
 - apiGroups:
@@ -917,6 +1063,32 @@ rules:
 - apiGroups:
   - core.skycluster-manager.savitestbed.ca
   resources:
+  - skyxrds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyxrds/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
+  - skyxrds/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - core.skycluster-manager.savitestbed.ca
+  resources:
   - virtualservices
   verbs:
   - create
@@ -966,6 +1138,18 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - xrds.skycluster.savitestbed.ca
+  resources:
+  - xprovidersetups/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

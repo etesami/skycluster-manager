@@ -29,6 +29,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/dynamic"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,6 +38,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	cpext "github.com/crossplane/crossplane/apis/apiextensions/v1"
 
 	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
 	corecontroller "github.com/etesami/skycluster-manager/internal/controller/core"
@@ -50,7 +53,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
+	utilruntime.Must(cpext.AddToScheme(scheme))
 	utilruntime.Must(corev1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
@@ -222,6 +225,15 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataflowAttribute")
+		os.Exit(1)
+	}
+	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
+	if err = (&corecontroller.SkyXRDReconciler{
+		Client:        mgr.GetClient(),
+		DynamicClient: dynamicClient,
+		Scheme:        mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SkyXRD")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

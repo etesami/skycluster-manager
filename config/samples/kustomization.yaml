@@ -1,7 +1,6 @@
 ## Append samples of your project ##
 resources:
 - core_v1alpha1_ilptask.yaml
-- core_v1alpha1_provider.yaml
 - core_v1alpha1_virtualservice.yaml
 - core_v1alpha1_skyapp.yaml
 - core_v1alpha1_dataflow.yaml
@@ -9,4 +8,5 @@ resources:
 - core_v1alpha1_providerlatencymap.yaml
 - core_v1alpha1_providerattribute.yaml
 - policy_v1alpha1_dataflowattribute.yaml
+- core_v1alpha1_skyxrd.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

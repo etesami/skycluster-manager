@@ -365,9 +365,9 @@ if pulp.LpStatus[prob.status] == 'Optimal':
 		for ll in c[v.name]:
 			if c[v.name][ll].varValue == 1:
 				res = {}
-				res['provider'] = providers[ll].name_base
+				res['name'] = providers[ll].name_base
 				res['region'] = providers[ll].region
-				res['providerType'] = providers[ll].providerType
+				res['type'] = providers[ll].providerType
 				result['tasks'][v.name].append(res)
 
 print(json.dumps(result))
