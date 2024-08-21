@@ -26,17 +26,22 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	cpextv1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
+	// cpextv1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
 
 	corev1alpha1 "github.com/etesami/skycluster-manager/api/core/v1alpha1"
 )
@@ -58,7 +63,52 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	log.Info("SkyXRD [" + req.Name + "] Reconciler started")
 
-	// Get the resource
+	// We are watching SkyXRDs objects and also XSkyCluster objects
+	// (possibly we need to watch XProviderSetup objects as well)
+	// If (XSkyCluster) object:
+	// 		1. Check if the object is ready
+	// 		2. If ready, submit the application to the overlay K8S
+
+	// If (SkyXRD) object:
+	// 		1. Check if the object has the status "Optimal"
+	// 		2. If the status is "Optimal", prepare the composite objects according to the deployment plan
+
+	gvk := schema.GroupVersionKind{
+		Group:   "xrds.skycluster.savitestbed.ca",
+		Version: "v1alpha1",
+		Kind:    "XSkyCluster",
+	}
+
+	// Create an unstructured object
+	unstructuredObj := &unstructured.Unstructured{}
+	unstructuredObj.SetGroupVersionKind(gvk)
+
+	// Fetch the object using the client
+	if err := r.Get(ctx, req.NamespacedName, unstructuredObj); err != nil {
+		if !errors.IsNotFound(err) {
+			// Handle the error if it's not a NotFound error
+			log.Error(err, "Failed to get Unstructured object XSkyCluster")
+			return ctrl.Result{}, err
+		}
+		// If the error is not found we need to proceed to the next object (i.e. SkyXRD)
+	} else {
+		// Now, you have the unstructured object
+		kubeCfg, found, err := unstructured.NestedString(unstructuredObj.Object, "status", "k3s", "kubeconfig")
+		if err != nil {
+			log.Error(err, "Failed to get kubeconfig from XSkyCluster object")
+			return ctrl.Result{}, err
+		}
+		if found {
+			// We have the kubeconfig and we can submit the application to the overlay K8S
+			log.Info("SkyXRD  Successfully retrieved the kubeconfig!")
+			if err := r.submitAppToRemoteCluster(ctx, kubeCfg, req.Namespace); err != nil {
+				log.Error(err, "Failed to submit the application to the remote cluster")
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	// Get skyXRD the resource
 	var skyXRD corev1alpha1.SkyXRD
 	if err := r.Get(ctx, req.NamespacedName, &skyXRD); err != nil {
 		if errors.IsNotFound(err) {
@@ -112,14 +162,12 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	// TODO: uncomment
 	if skyXRD.Spec.TaskPlacement.Status != "Optimal" {
 		log.Info("SkyXRD [" + req.Name + "] Ignored. Status is: " + skyXRD.Spec.TaskPlacement.Status)
 		return ctrl.Result{}, nil
 	}
 
 	// Status is Optimal, preparing the composite objects according to deployment plan
-
 	// Find the corresponding SkyApp object
 	var skyApp corev1alpha1.SkyApp
 	if err := r.Get(ctx, client.ObjectKey{
@@ -226,6 +274,14 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// create a map of deployed resources per provider
 	// At this stage we assume there is no deployed vservices.
 
+	// SkyXRD constains a list of providers (XSkyProvider),
+	// a list of K8S controllers (XSkyCluster with type ctrl) and
+	// a list of K8S agents (XSkyCluster with type agent).
+
+	// The controller creates the XProviderSetup, then
+	// Once the XProviderSetups are ready, creates XSkyCluster objects for each provider
+	// One is ctrl node and the rest are agent XSkyCluster.
+
 	deployedServices := make([]corev1alpha1.DeployedServices, 0)
 	preparedProviders := make(map[corev1alpha1.ProviderRef]corev1alpha1.SkyService)
 
@@ -306,14 +362,6 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		log.Error(err, "Failed to update SkyXRD status")
 		return ctrl.Result{}, err
 	}
-
-	//    SkyXRD constains a list of providers (XSkyProvider),
-	//		a list of K8S controllers (XSkyCluster with type ctrl) and
-	// 		a list of K8S agents (XSkyCluster with type agent).
-
-	// 		The controller creates the XProviderSetup, then
-	// 		Once the XProviderSetups are ready, creates XSkyCluster objects for each provider
-	//    One is ctrl node and the rest are agent XSkyCluster.
 
 	//    The controller observes the XRD objects and wait for them to become ready.
 	//    We now have a Sky K8S cluster.
@@ -539,10 +587,75 @@ func (r *SkyXRDReconciler) createXProviderSetup(ctx context.Context, skyxrd *cor
 	return nil
 }
 
+func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubeconfig string, namespace string) error {
+	log := log.FromContext(ctx)
+	log.Info("SkyXRD  Submitting the application to the remote cluster")
+	// List all deployments with the label "sky" in the current cluster
+	deployments := &appsv1.DeploymentList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingLabels(map[string]string{
+			"skycluster-manager.savitestbed.ca/managed-by": "skycluster",
+		}),
+	}
+	if err := r.Client.List(ctx, deployments, listOpts...); err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("SkyXRD  No deployments found with given labels")
+			return nil
+		} else {
+			log.Error(err, "Failed to list deployments with given labels")
+			return err
+		}
+	}
+
+	// Build the config from the kubeconfig string
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+	if err != nil {
+		return err
+	}
+
+	// Create a clientset for the remote cluster
+	remoteClientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	// Submit each deployment to the remote cluster
+	for _, dep := range deployments.Items {
+		dep.ResourceVersion = ""
+		dep.UID = ""
+		if _, err := remoteClientset.AppsV1().Deployments(dep.Namespace).Create(ctx, &dep, metav1.CreateOptions{}); err != nil {
+			log.Error(err, "Failed to create deployment in remote cluster")
+			return err
+		} else {
+			log.Info("[SkyXRD] Deployment " + dep.Name + " created in remote cluster!")
+		}
+	}
+
+	return nil
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *SkyXRDReconciler) SetupWithManager(mgr ctrl.Manager) error {
+
+	// u := &unstructured.Unstructured{}
+	gvk := schema.GroupVersionKind{
+		Group:   "xrds.skycluster.savitestbed.ca",
+		Version: "v1alpha1",
+		Kind:    "XSkyCluster",
+	}
+	unstructuredObj := &unstructured.Unstructured{}
+	unstructuredObj.SetGroupVersionKind(gvk)
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1alpha1.SkyXRD{}).
-		Watches(&cpextv1.Composition{}, &handler.EnqueueRequestForObject{}).
+		// Watches(&corev1alpha1.ILPTask{}, &handler.EnqueueRequestForObject{}).
+		Watches(
+			unstructuredObj,
+			&handler.EnqueueRequestForObject{}, builder.WithPredicates(
+				predicate.ResourceVersionChangedPredicate{},
+				predicate.GenerationChangedPredicate{},
+				predicate.AnnotationChangedPredicate{},
+			)).
 		Complete(r)
 }

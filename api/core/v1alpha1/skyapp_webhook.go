@@ -54,7 +54,7 @@ func (r *SkyApp) Default(ctx context.Context, obj runtime.Object) error {
 		return nil
 	}
 
-	skyAnnotation, exists := deploy.Annotations["managed-by"]
+	skyAnnotation, exists := deploy.Annotations["skycluster-manager.savitestbed.ca/managed-by"]
 	if exists && skyAnnotation == "skycluster" {
 		skyapplog.Info("Contains annotation", "Annotation", skyAnnotation)
 		// set scheduler to skycluster scheduler
