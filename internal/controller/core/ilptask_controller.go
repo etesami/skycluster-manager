@@ -114,7 +114,6 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// if not, check if any pod is running
 	// if not, create a pod to run the optimizer
 
-	taskCompleted := false
 	// Check if the optimization is already completed
 	// if it is completed, the Status is not nil
 	if ilptask.Status.Result != "" {
@@ -130,12 +129,25 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		//              The ilptask shoould be flagged as incompleted
 		//              The reconcile function and the optimizer should be re-run
 		log.Info("ILPTask [" + req.Name + "] task already completed or has a result")
-		// TODO: Remove the flag and return
-		// I use a flag now to test the reconciliation loop when the task is completed
-		// but normally when the task isc completed we don't need to do that
-		// unless the problem formulation is changed
-		taskCompleted = true
-		// return ctrl.Result{}, nil
+
+		skyxrd := &corev1alpha1.SkyXRD{}
+		if err := r.Get(ctx, client.ObjectKey{
+			Namespace: skyapp.Namespace,
+			Name:      skyapp.Spec.AppName,
+		}, skyxrd); err != nil {
+			if errors.IsNotFound(err) {
+				// SkyXRD doesn't exist, create it
+				log.Info("ILPTask [" + skyapp.Spec.AppName + "] SkyXRD doesn't exist, creating it")
+				if err := r.createSkyXRD(ctx, skyapp, ilptask); err != nil {
+					log.Error(err, "Unable to create SkyXRD")
+					return ctrl.Result{}, err
+				}
+			} else {
+				log.Error(err, "Failed to fetch SkyXRD, Unknown error occurred")
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
 	}
 
 	// Define the Pod name
@@ -143,9 +155,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Check if the Pod exists
 	pod := &corev1.Pod{}
-	err = r.Get(ctx, types.NamespacedName{Name: podName, Namespace: ilptask.Namespace}, pod)
-	// TODO: Remove the flag taskCompleted
-	if !taskCompleted && err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: podName, Namespace: ilptask.Namespace}, pod); err != nil {
 		if errors.IsNotFound(err) {
 			// Pod doesn't exist, create it
 			log.Info("ILPTask [" + req.Name + "] Creating optimizer Pod")
@@ -425,13 +435,12 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Requeue to check the Pod status later
 			log.Info("ILPTask [" + req.Name + "] Requeue to check optimizer Pod status")
 			return ctrl.Result{RequeueAfter: time.Second * 5}, nil
-			// return ctrl.Result{}, nil
 		}
 		log.Error(err, "Pod exists but I am unable to get optimizer Pod")
 		return ctrl.Result{}, err
 	}
 
-	// TODO: we have the results
+	// at this point we may have the results
 	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
 		log.Info("ILPTask [" + req.Name + "] Updating ILPTask annotations")
 		if ilptask.Annotations == nil {
@@ -460,26 +469,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, err
 		}
 		log.Info("ILPTask [" + req.Name + "] Status updated!")
-
-		// Delete the completed Pod
-		err = r.Delete(ctx, pod)
-		log.Info("ILPTask [" + req.Name + "] Deleting completed Pod")
-		if err != nil {
-			log.Error(err, "Unable to delete completed Pod")
-			// Don't return an error, as the main task is done
-		}
-		return ctrl.Result{}, nil
-	}
-
-	// check if the ILPTask has a result
-	if taskCompleted && ilptask.Status.Result != "" {
-		var result corev1alpha1.TaskPlacement
-		// Assuming the pod log is a JSON string (it should be a json string unless something is wrong)
-		// Parse the JSON string
-		if err := json.Unmarshal([]byte(ilptask.Status.Solution), &result); err != nil {
-			log.Error(err, "Unable to parse the JSON string")
-			return ctrl.Result{}, err
-		}
+		log.Info("ILPTask [" + skyapp.Spec.AppName + "] Status: " + ilptask.Status.Result)
 
 		// TODO: When there is a optimization result, we should propagate the result to the SkyXRD object
 		// Below there are some comments on how to do this.
@@ -494,51 +484,57 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		//    For simplicity, I can create a new controller: SkyXRD controller
 		//    and a new object of this type is created when the optimization results are ready.
 
-		// create SkyXRD object with optimization results
-
-		skyxrd := &corev1alpha1.SkyXRD{}
-		if err := r.Get(ctx, client.ObjectKey{
-			Namespace: skyapp.Namespace,
-			Name:      skyapp.Spec.AppName,
-		}, skyxrd); err != nil {
-			if errors.IsNotFound(err) {
-				// SkyXRD doesn't exist, create it
-				log.Info("ILPTask [" + skyapp.Spec.AppName + "] SkyXRD doesn't exist, creating it")
-				skyxrd = &corev1alpha1.SkyXRD{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      skyapp.Spec.AppName,
-						Namespace: skyapp.Namespace,
-					},
-					Spec: corev1alpha1.SkyXRDSpec{
-						AppName:       skyapp.Spec.AppName,
-						SkyAppRefName: skyapp.Name,
-						TaskPlacement: result,
-					},
-				}
-				if err := controllerutil.SetControllerReference(skyapp, skyxrd, r.Scheme); err != nil {
-					log.Error(err, "Failed to set owner reference on SkyXRD")
-					return ctrl.Result{}, err
-				}
-				if err := r.Create(ctx, skyxrd); err != nil {
-					log.Error(err, "Failed to create SkyXRD")
-					return ctrl.Result{}, err
-				}
-			} else {
-				log.Error(err, "Failed to fetch SkyXRD, Unknown error occurred")
-				return ctrl.Result{}, err
-			}
-		} else {
-			// skyxrd exists,
-			// TODO: we may need to update it if the optimization results is changed
-			log.Info("ILPTask [" + skyapp.Spec.AppName + "] SkyXRD exists")
+		// TODO: at this point I assume the SkyXRD object does not exist
+		// If it exists, it implies that the optimization is already done once
+		// and this is either a change in the ILPTask. Need to consider this case later.
+		if err := r.createSkyXRD(ctx, skyapp, ilptask); err != nil {
+			log.Error(err, "Unable to create SkyXRD")
+			return ctrl.Result{}, err
 		}
 
-		// define a temp type to hold the result
-		log.Info("ILPTask [" + skyapp.Spec.AppName + "] Status: " + result.Status)
+		// Delete the completed Pod
+		log.Info("ILPTask [" + req.Name + "] Deleting completed Pod")
+		if err := r.Delete(ctx, pod); err != nil {
+			log.Error(err, "Unable to delete completed Pod")
+			// Don't return an error, as the main task is done
+		}
 		return ctrl.Result{}, nil
 	}
+
 	// Pod is still running, requeue
 	return ctrl.Result{RequeueAfter: time.Second * 2}, nil
+}
+
+func (r *ILPTaskReconciler) createSkyXRD(ctx context.Context, skyapp *corev1alpha1.SkyApp, ilptask *corev1alpha1.ILPTask) error {
+	log := log.FromContext(ctx)
+	var result corev1alpha1.TaskPlacement
+	// Assuming the pod log is a JSON string (it should be a json string unless something is wrong)
+	// Parse the JSON string
+	if err := json.Unmarshal([]byte(ilptask.Status.Solution), &result); err != nil {
+		log.Error(err, "Unable to parse the JSON string")
+		return err
+	}
+
+	skyxrd := &corev1alpha1.SkyXRD{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      skyapp.Spec.AppName,
+			Namespace: skyapp.Namespace,
+		},
+		Spec: corev1alpha1.SkyXRDSpec{
+			AppName:       skyapp.Spec.AppName,
+			SkyAppRefName: skyapp.Name,
+			TaskPlacement: result,
+		},
+	}
+	if err := controllerutil.SetControllerReference(skyapp, skyxrd, r.Scheme); err != nil {
+		log.Error(err, "Failed to set owner reference on SkyXRD")
+		return err
+	}
+	if err := r.Create(ctx, skyxrd); err != nil {
+		log.Error(err, "Failed to create SkyXRD")
+		return err
+	}
+	return nil
 }
 
 // write a function to create a configmap given the content of the file

@@ -69,90 +69,12 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// TODO: uncomment
-	// if skyXRD.Spec.DeploymentPlan.Status != "Optimal" {
-	// 	log.Info("SkyXRD [" + req.Name + "] Ignored. Status is: " + skyXRD.Spec.DeploymentPlan.Status)
-	// 	return ctrl.Result{}, nil
-	// }
-	// // Status is Optimal
-	// for task, plan := range skyXRD.Spec.DeploymentPlan.Tasks {
-	// 	for _, provider := range plan {
-	// 		log.Info("SkyXRD [" + req.Name + "] Task: " + task + " (" + provider.Name + ", " + provider.Region + ", " + provider.Type + ")")
-	// 	}
-	// }
-
-	// _ = &cpext.CompositeResourceDefinition{
-	// 	ObjectMeta: metav1.ObjectMeta{
-	// 		Name:      skyXRD.Spec.AppName,
-	// 		Namespace: skyXRD.Namespace,
-	// 	},
-	// }
-
-	// // items, err := cpext.Compositions()
-	// compositionList := &cpext.CompositionList{}
-	// if err := r.List(ctx, compositionList); err != nil {
-	// 	log.Error(err, "Failed to list compositions")
-	// }
-	// for _, comp := range compositionList.Items {
-	// 	log.Info("SkyXRD [" + req.Name + "] CompositeTypeRef: " + comp.Spec.CompositeTypeRef.Kind + comp.Spec.CompositeTypeRef.APIVersion)
-	// }
-
-	var gvr = schema.GroupVersionResource{
-		Group:    "xrds.skycluster.savitestbed.ca",
-		Version:  "v1alpha1",
-		Resource: "xprovidersetups",
+	if skyXRD.Spec.TaskPlacement.Status != "Optimal" {
+		log.Info("SkyXRD [" + req.Name + "] Ignored. Status is: " + skyXRD.Spec.TaskPlacement.Status)
+		return ctrl.Result{}, nil
 	}
 
-	type XRDParams struct {
-		Provider string
-		Region   string
-		Zone     string
-		App      string
-		IpGroup  string
-		IpSubnet string
-	}
-	params := XRDParams{
-		Provider: "savi",
-		Region:   "scinet",
-		Zone:     "default",
-		App:      "app1",
-		IpGroup:  "30",
-		IpSubnet: "212",
-	}
-
-	tmpl, err := template.New("xrd").Parse(xrdTemplate)
-	if err != nil {
-		log.Error(err, "Failed to parse template")
-		return ctrl.Result{}, err
-	}
-
-	// Execute the template with the provided parameters
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, params); err != nil {
-		log.Error(err, "Failed to execute template")
-		return ctrl.Result{}, err
-	}
-
-	// Decode YAML to unstructured object
-	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-	obj := &unstructured.Unstructured{}
-	_, _, err = dec.Decode(buf.Bytes(), nil, obj)
-	if err != nil {
-		log.Error(err, "Failed to decode YAML")
-		return ctrl.Result{}, err
-	}
-
-	resourceClient := r.DynamicClient.Resource(gvr)
-
-	// Create the object in the Kubernetes cluster
-	// err = r.Create(context.Background(), obj)
-	if _, err := resourceClient.Create(ctx, obj, metav1.CreateOptions{}); err != nil {
-		if !errors.IsAlreadyExists(err) {
-			log.Error(err, "Failed to create XProviderSetup, maybe object already exists?")
-			return ctrl.Result{}, err
-		}
-	}
-
-	// log.Info("Created XProviderSetup: " + result.GetName())
+	// Status is Optimal, preparing the composite objects according to deployment plan
 
 	// Find the corresponding SkyApp object
 	var skyApp corev1alpha1.SkyApp
@@ -164,7 +86,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	// TO Consider: There may be multiple tasks that are placed in the same provider
+	// To Consider: There may be multiple tasks that are placed in the same provider
 	// and they require the same vservice (e.g. SkyK8SCluster). This case, we need to
 	// figure out which composed virtual service should be created only once,
 	// and which ones should be created multiple times.
@@ -181,18 +103,17 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	for taskName, providers := range skyXRD.Spec.TaskPlacement.Tasks {
 		log.Info("SkyXRD [" + req.Name + "] Task: " + taskName)
 		// We need to get the vservice for each task
-		// This coming from SkyApp.Spec.AppConfig
-		// e.g. frontend
+		// This coming from SkyApp.Spec.AppConfig, e.g. frontend
 
 		// ensure pp in providers exists in the deployPlan
 		for _, pp := range providers {
 			if _, ok := deployPlan[pp]; !ok {
-				log.Info("SkyXRD [" + req.Name + "]:    Initilizing " + pp.Name + ", Region: " + pp.Region + ", Type: " + pp.Type)
+				log.Info("SkyXRD [" + req.Name + "]:  Initilizing " + pp.Name + ", Region: " + pp.Region + ", Type: " + pp.Type)
 				deployPlan[pp] = make([]corev1alpha1.VServiceComposition, 0)
 			}
 		}
 
-		// find APIVersion and Kind for this taskName
+		// Find APIVersion and Kind for this taskName
 		// and add it to the deployPlan for each provider
 		// we ensure if same service is required by multiple providers
 		// each provider has its own composition
@@ -209,7 +130,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					// TODO: remove this section
 					// manually adjust the vservice to skyk8s (this is the only one supported now)
 					vserviceConstraint.VirtualServiceName = "skyk8scluster"
-					log.Info("SkyXRD [" + req.Name + "]        Task: " + task.Name + " " + vserviceConstraint.VirtualServiceName)
+					log.Info("SkyXRD [" + req.Name + "]     Task: " + task.Name + " " + vserviceConstraint.VirtualServiceName)
 					// Now we can retrive the information from virtual services with api and kind
 					var vs corev1alpha1.VirtualService
 					if err := r.Get(ctx, client.ObjectKey{
@@ -238,12 +159,41 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	log.Info("SkyXRD [" + req.Name + "] Deployment Plan:")
 	// Let's print all the deployPlan
 	for pp, vss := range deployPlan {
 		log.Info("SkyXRD [" + req.Name + "] Provider: " + pp.Name + ", Region: " + pp.Region + ", Type: " + pp.Type)
 		for _, vs := range vss {
-			log.Info("SkyXRD [" + req.Name + "]     " + vs.APIVersion + ", " + vs.Kind)
+			log.Info("SkyXRD [" + req.Name + "]     " + vs.Kind + "." + vs.APIVersion)
+		}
+	}
+
+	// Now we have the deployPlan, we can create the composite objects
+	// create a map of deployed resources per provider
+	providerSetup := make(map[corev1alpha1.ProviderRef]bool, 0)
+
+	for pp, vss := range deployPlan {
+		// log.Info("SkyXRD [" + req.Name + "] Provider: " + pp.Name + ", Region: " + pp.Region + ", Type: " + pp.Type)
+		for _, vs := range vss {
+			// We support only one type of virtual service for now: skyk8scluster
+			// For each provider, this composite resource consists of XProviderSetup and XSkyCluster
+			// The XProviderSetup is created only once for each provider
+			// For now, we submit both XProviderSetup and XSkyCluster at the same time and
+			// manage dependencies with XRD go templates
+			log.Info("SkyXRD [" + req.Name + "]     " + vs.Kind + "." + vs.APIVersion)
+			if !providerSetup[pp] {
+				// Create XProviderSetup
+
+				// Figure out values per provider out the values
+				params := getParamsForProvider(pp, skyXRD.Spec.AppName)
+
+				if err := r.createXProviderSetup(ctx, &skyXRD, params); err != nil {
+					log.Error(err, "Failed to create XProviderSetup")
+					return ctrl.Result{}, err
+				}
+				log.Info("SkyXRD [" + req.Name + "] Created XProviderSetup (" + pp.Name + ", " + pp.Region + ", " + pp.Type + ")")
+				providerSetup[pp] = true
+			}
+
 		}
 	}
 
@@ -265,6 +215,120 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	//    submit all deployment, service, etc. objects to the overlay K8S.
 
 	return ctrl.Result{}, nil
+}
+
+// Func to return appropriate params for the XRD template given the provider
+func getParamsForProvider(pp corev1alpha1.ProviderRef, appName string) XProviderSetupParams {
+
+	ipGroup := "30"
+	ipSubnet := "210"
+	switch pp.Name {
+	case "savi":
+		switch pp.Region {
+		case "scinet":
+			ipGroup = "30"
+			ipSubnet = "211"
+		case "vaughan":
+			ipGroup = "29"
+			ipSubnet = "211"
+		}
+	case "aws":
+		ipGroup = "27"
+		switch pp.Region {
+		case "ca-central-1":
+			ipSubnet = "211"
+		case "us-east-1":
+			ipSubnet = "212"
+		}
+	case "gcp":
+		ipGroup = "28"
+		switch pp.Region {
+		case "us-west1":
+			ipSubnet = "211"
+		case "us-east1":
+			ipSubnet = "212"
+		}
+	case "azure":
+		ipGroup = "26"
+		switch pp.Region {
+		case "centralus":
+			ipSubnet = "211"
+		case "canadaeast":
+			ipSubnet = "212"
+		case "canadacentral":
+			ipSubnet = "213"
+		}
+	// The default shoud not be reached
+	default:
+		ipGroup = "30"
+		ipSubnet = "212"
+	}
+
+	params := XProviderSetupParams{
+		Provider: pp.Name,
+		Region:   pp.Region,
+		Zone:     "default",
+		App:      appName,
+		IpGroup:  ipGroup,
+		IpSubnet: ipSubnet,
+	}
+
+	return params
+}
+
+func (r *SkyXRDReconciler) createXProviderSetup(ctx context.Context, skyxrd *corev1alpha1.SkyXRD, params XProviderSetupParams) error {
+	log := log.FromContext(ctx)
+
+	var gvr = schema.GroupVersionResource{
+		Group:    "xrds.skycluster.savitestbed.ca",
+		Version:  "v1alpha1",
+		Resource: "xprovidersetups",
+	}
+
+	tmpl, err := template.New("xrd").Parse(xProviderSetupParam)
+	if err != nil {
+		log.Error(err, "Failed to parse template")
+		return err
+	}
+
+	// Execute the template with the provided parameters
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, params); err != nil {
+		log.Error(err, "Failed to execute template")
+		return err
+	}
+
+	// Decode YAML to unstructured object
+	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	obj := &unstructured.Unstructured{}
+	_, _, err = dec.Decode(buf.Bytes(), nil, obj)
+	if err != nil {
+		log.Error(err, "Failed to decode YAML")
+		return err
+	}
+
+	// set the ownership
+	obj.SetOwnerReferences([]metav1.OwnerReference{
+		metav1.OwnerReference{
+			APIVersion: skyxrd.APIVersion,
+			Kind:       skyxrd.Kind,
+			Name:       skyxrd.Name,
+			UID:        skyxrd.UID,
+			Controller: func(b bool) *bool { return &b }(true),
+		},
+	})
+
+	resourceClient := r.DynamicClient.Resource(gvr)
+	// Create the object in the Kubernetes cluster
+	// err = r.Create(context.Background(), obj)
+	if _, err := resourceClient.Create(ctx, obj, metav1.CreateOptions{}); err != nil {
+		if !errors.IsAlreadyExists(err) {
+			log.Error(err, "Failed to create XProviderSetup, maybe object already exists?")
+			return err
+		}
+	}
+	// log.Info("Created XProviderSetup: " + obj.GetName())
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

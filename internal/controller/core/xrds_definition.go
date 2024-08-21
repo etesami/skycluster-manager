@@ -1,6 +1,15 @@
 package core
 
-const xrdTemplate = `
+type XProviderSetupParams struct {
+	Provider string
+	Region   string
+	Zone     string
+	App      string
+	IpGroup  string
+	IpSubnet string
+}
+
+const xProviderSetupParam = `
 apiVersion: xrds.skycluster.savitestbed.ca/v1alpha1
 metadata:
   name: xprovidersetup1-{{.Provider}}-{{.Region}}-{{.Zone}}-{{.App}}
