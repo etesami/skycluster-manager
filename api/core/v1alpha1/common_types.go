@@ -12,7 +12,23 @@ type TaskPlacement struct {
 }
 
 // a map from providers to the list of compositions to be created and maintained
-type DeploymentPlan map[string]VirtualService
+// type DeploymentPlan map[string]VirtualService
+
+type SkyService struct {
+	Name       string `json:"name,omitempty"`
+	APIVersion string `json:"apiVersion,omitempty"`
+	Type       string `json:"type,omitempty"`
+}
+
+// TODO: We may need tp update the DeployedServices type later to include
+// more specific information about the deployed services.
+// Alternatively, we can create a new type for each service type.
+// This should be investigated further.
+// DeployedServices: ProviderRef -> [SkyServiceName] -> {Type: "ctrl" or "agent" or "etc."}
+type DeployedServices struct {
+	Provider ProviderRef           `json:"provider"`
+	Services map[string]SkyService `json:"vservices,omitempty"`
+}
 
 // Task -> Regions
 // Regions:

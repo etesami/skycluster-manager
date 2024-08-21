@@ -79,7 +79,6 @@ spec:
             required:
             - appConfig
             - appName
-            - namespace
             type: object
           status:
             description: SkyAppStatus defines the observed state of SkyApp

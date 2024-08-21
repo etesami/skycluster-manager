@@ -33,8 +33,8 @@ type SkyXRDSpec struct {
 
 // SkyXRDStatus defines the observed state of SkyXRD
 type SkyXRDStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	DeployedServices  []DeployedServices `json:"deployedServices,omitempty"`
+	DeployedProviders []DeployedServices `json:"deployedProviders,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -46,7 +46,7 @@ type SkyAppSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	AppName   string            `json:"appName"`
-	Namespace string            `json:"namespace"`
+	Namespace string            `json:"namespace,omitempty"`
 	AppConfig []AppConfigDetail `json:"appConfig"`
 }
 

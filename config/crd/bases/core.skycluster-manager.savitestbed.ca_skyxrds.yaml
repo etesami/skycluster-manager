@@ -76,6 +76,81 @@ spec:
             type: object
           status:
             description: SkyXRDStatus defines the observed state of SkyXRD
+            properties:
+              deployedProviders:
+                items:
+                  description: |-
+                    TODO: We may need tp update the DeployedServices type later to include
+                    more specific information about the deployed services.
+                    Alternatively, we can create a new type for each service type.
+                    This should be investigated further.
+                    DeployedServices: ProviderRef -> [SkyServiceName] -> {Type: "ctrl" or "agent" or "etc."}
+                  properties:
+                    provider:
+                      properties:
+                        name:
+                          type: string
+                        region:
+                          type: string
+                        type:
+                          type: string
+                      required:
+                      - name
+                      - region
+                      - type
+                      type: object
+                    vservices:
+                      additionalProperties:
+                        properties:
+                          apiVersion:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: object
+                  required:
+                  - provider
+                  type: object
+                type: array
+              deployedServices:
+                items:
+                  description: |-
+                    TODO: We may need tp update the DeployedServices type later to include
+                    more specific information about the deployed services.
+                    Alternatively, we can create a new type for each service type.
+                    This should be investigated further.
+                    DeployedServices: ProviderRef -> [SkyServiceName] -> {Type: "ctrl" or "agent" or "etc."}
+                  properties:
+                    provider:
+                      properties:
+                        name:
+                          type: string
+                        region:
+                          type: string
+                        type:
+                          type: string
+                      required:
+                      - name
+                      - region
+                      - type
+                      type: object
+                    vservices:
+                      additionalProperties:
+                        properties:
+                          apiVersion:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: object
+                  required:
+                  - provider
+                  type: object
+                type: array
             type: object
         type: object
     served: true

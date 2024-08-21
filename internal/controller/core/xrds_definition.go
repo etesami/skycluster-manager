@@ -1,22 +1,59 @@
 package core
 
 type XProviderSetupParams struct {
-	Provider string
-	Region   string
-	Zone     string
-	App      string
-	IpGroup  string
-	IpSubnet string
+	Name       string
+	APIVersion string
+	Provider   string
+	Region     string
+	Zone       string
+	AppName    string
+	IpGroup    string
+	IpSubnet   string
 }
 
-const xProviderSetupParam = `
+type XSkyClusterSetupParams struct {
+	Name         string
+	APIVersion   string
+	Provider     string
+	Region       string
+	Type         string
+	AppName      string
+	Num          string
+	Size         string
+	IsController string
+}
+
+const xSkyClusterSetupTemplate = `
 apiVersion: xrds.skycluster.savitestbed.ca/v1alpha1
+kind: XSkyCluster
 metadata:
-  name: xprovidersetup1-{{.Provider}}-{{.Region}}-{{.Zone}}-{{.App}}
-  annotations:
-    crossplane.io/paused: "true"
+  name: xskycluster1-{{.Provider}}-{{.Region}}-{{.Type}}-{{.AppName}}-{{.Num}}
   labels:
     managed-by: skycluster
+    skycluster/app-name: {{.AppName}}
+    skycluster/environment: dev
+spec: 
+  forProvider:
+    flavor: {{.Size}}
+    image: ubuntu-22.04
+    k3s:
+      isController: {{.IsController}}
+  provider:
+    name: {{.Provider}}
+    region: {{.Region}}
+`
+
+const xProviderSetupTemplate = `
+apiVersion: xrds.skycluster.savitestbed.ca/v1alpha1
+metadata:
+  name: {{.Name}}
+  labels:
+    managed-by: skycluster
+    skycluster/environment: dev
+    skycluster/app-name: {{.AppName}}
+    skycluster/provider-name: {{.Provider}}
+    skycluster/provider-region: {{.Region}}
+    skycluster/provider-zone: {{.Zone}}
 kind: XProviderSetup
 spec:
   forProvider:
