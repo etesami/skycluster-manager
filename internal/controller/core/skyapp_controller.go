@@ -43,13 +43,13 @@ type SkyAppReconciler struct {
 // Reconcile reconciles the SkyApp object
 func (r *SkyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-	log.Info("SkyApp [" + req.Name + "] Reconciler started")
+	// log.Info("SkyApp [" + req.Name + "] Reconciler started")
 
 	skyapp := &corev1alpha1.SkyApp{}
 	err := r.Get(ctx, req.NamespacedName, skyapp)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Info("SkyApp [" + req.Name + "] not found. Why?")
+			// log.Info("SkyApp [" + req.Name + "] not found. Why?")
 			return ctrl.Result{}, nil
 		}
 		log.Error(err, "Unable to fetch ["+req.Name+"]")

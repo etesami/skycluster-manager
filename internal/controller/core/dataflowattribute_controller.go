@@ -41,7 +41,7 @@ type DataflowAttributeReconciler struct {
 // Reconcile reconciles the DataflowAttribute object
 func (r *DataflowAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-	log.Info("DataflowAttr [" + req.Name + "] Reconciler started")
+	// log.Info("DataflowAttr [" + req.Name + "] Reconciler started")
 
 	dataflowattr := &corev1alpha1.DataflowAttribute{}
 	err := r.Get(ctx, req.NamespacedName, dataflowattr)

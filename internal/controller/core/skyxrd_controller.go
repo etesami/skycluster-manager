@@ -19,6 +19,7 @@ package core
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"text/template"
@@ -26,7 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
+	"reflect"
+
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,6 +42,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -101,7 +106,12 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if found {
 			// We have the kubeconfig and we can submit the application to the overlay K8S
 			log.Info("SkyXRD  Successfully retrieved the kubeconfig!")
-			if err := r.submitAppToRemoteCluster(ctx, kubeCfg, req.Namespace); err != nil {
+			appName, found, _ := unstructured.NestedString(unstructuredObj.Object, "metadata", "labels", "skycluster/app-name")
+			if !found {
+				// TODO: make sure the appName is supplied
+				appName = "default"
+			}
+			if err := r.submitAppToRemoteCluster(ctx, kubeCfg, req.Namespace, appName); err != nil {
 				log.Error(err, "Failed to submit the application to the remote cluster")
 				return ctrl.Result{}, err
 			}
@@ -112,7 +122,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	var skyXRD corev1alpha1.SkyXRD
 	if err := r.Get(ctx, req.NamespacedName, &skyXRD); err != nil {
 		if errors.IsNotFound(err) {
-			log.Info("SkyXRD [" + req.Name + "] not found, why?")
+			// log.Info("SkyXRD [" + req.Name + "] not found, why?")
 			// In this case SkyXRD may be deleted.
 			// We need to ensure all composition created by this object are deleted as well.
 			// To do this, we need to delete finalizers from all the compositions that
@@ -132,7 +142,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					Resource: "xskyclusters",
 				},
 			} {
-				log.Info("SkyXRD [" + req.Name + "]   Checking resources for " + gvr.Resource)
+				// log.Info("SkyXRD [" + req.Name + "]   Checking resources for " + gvr.Resource)
 				resourceClient := r.DynamicClient.Resource(gvr)
 				list, err := resourceClient.List(ctx, metav1.ListOptions{})
 				if err != nil {
@@ -144,7 +154,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					ownerRefs := obj.GetOwnerReferences()
 					for _, ownerRef := range ownerRefs {
 						if ownerRef.Name == req.Name {
-							log.Info("SkyXRD [" + req.Name + "]    Removing finalizers obj " + obj.GetName())
+							// log.Info("SkyXRD [" + req.Name + "]    Removing finalizers obj " + obj.GetName())
 							// Remove the finalizers
 							obj.SetFinalizers([]string{})
 							if _, err := resourceClient.Update(ctx, &obj, metav1.UpdateOptions{}); err != nil {
@@ -587,15 +597,16 @@ func (r *SkyXRDReconciler) createXProviderSetup(ctx context.Context, skyxrd *cor
 	return nil
 }
 
-func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubeconfig string, namespace string) error {
+func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubeconfig string, namespace string, appName string) error {
 	log := log.FromContext(ctx)
-	log.Info("SkyXRD  Submitting the application to the remote cluster")
+	// log.Info("SkyXRD  Submitting the application to the remote cluster")
 	// List all deployments with the label "sky" in the current cluster
 	deployments := &appsv1.DeploymentList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(namespace),
 		client.MatchingLabels(map[string]string{
 			"skycluster-manager.savitestbed.ca/managed-by": "skycluster",
+			"skycluster-manager.savitestbed.ca/app-name":   appName,
 		}),
 	}
 	if err := r.Client.List(ctx, deployments, listOpts...); err != nil {
@@ -604,6 +615,43 @@ func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubecon
 			return nil
 		} else {
 			log.Error(err, "Failed to list deployments with given labels")
+			return err
+		}
+	}
+
+	// Services
+	services := &corev1.ServiceList{}
+	listOpts = []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingLabels(map[string]string{
+			"skycluster-manager.savitestbed.ca/managed-by": "skycluster",
+			"skycluster-manager.savitestbed.ca/app-name":   appName,
+		}),
+	}
+	if err := r.Client.List(ctx, services, listOpts...); err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("SkyXRD No services found with given labels")
+			return nil
+		} else {
+			log.Error(err, "Failed to list services with given labels")
+			return err
+		}
+	}
+
+	configMaps := &corev1.ConfigMapList{}
+	listOpts = []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingLabels(map[string]string{
+			"skycluster-manager.savitestbed.ca/managed-by": "skycluster",
+			"skycluster-manager.savitestbed.ca/app-name":   appName,
+		}),
+	}
+	if err := r.Client.List(ctx, configMaps, listOpts...); err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("SkyXRD No configmaps found with given labels")
+			return nil
+		} else {
+			log.Error(err, "Failed to list configmaps with given labels")
 			return err
 		}
 	}
@@ -622,14 +670,68 @@ func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubecon
 
 	// Submit each deployment to the remote cluster
 	for _, dep := range deployments.Items {
-		dep.ResourceVersion = ""
-		dep.UID = ""
-		if _, err := remoteClientset.AppsV1().Deployments(dep.Namespace).Create(ctx, &dep, metav1.CreateOptions{}); err != nil {
-			log.Error(err, "Failed to create deployment in remote cluster")
+		lastAppliedConfig, exists := dep.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
+		if !exists {
+			log.Error(nil, "Annotation 'kubectl.kubernetes.io/last-applied-configuration' not found on deployment")
 			return err
-		} else {
-			log.Info("[SkyXRD] Deployment " + dep.Name + " created in remote cluster!")
 		}
+		var updatedDep appsv1.Deployment
+		if err := json.Unmarshal([]byte(lastAppliedConfig), &updatedDep); err != nil {
+			log.Error(err, "Failed to unmarshal 'last-applied-configuration' annotation Deployment "+dep.Name)
+			return err
+		}
+		if _, err := remoteClientset.AppsV1().Deployments(dep.Namespace).Create(ctx, &updatedDep, metav1.CreateOptions{}); err != nil {
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err, "Failed to create deployment in remote cluster")
+				return err
+			} else {
+				log.Info("[SkyXRD] Deployment " + dep.Name + " already exists in remote cluster!")
+			}
+		}
+		log.Info("[SkyXRD] Deployment " + dep.Name + " created in remote cluster!")
+	}
+
+	for _, svc := range services.Items {
+		lastAppliedConfig, exists := svc.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
+		if !exists {
+			log.Error(nil, "Annotation 'kubectl.kubernetes.io/last-applied-configuration' not found on svc"+svc.Name)
+			return err
+		}
+		var updatedSvc corev1.Service
+		if err := json.Unmarshal([]byte(lastAppliedConfig), &updatedSvc); err != nil {
+			log.Error(err, "Failed to unmarshal 'last-applied-configuration' annotation SVC")
+			return err
+		}
+		if _, err := remoteClientset.CoreV1().Services(svc.Namespace).Create(ctx, &updatedSvc, metav1.CreateOptions{}); err != nil {
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err, "Failed to create service in remote cluster")
+				return err
+			} else {
+				log.Info("[SkyXRD] Service " + svc.Name + " already exists in remote cluster!")
+			}
+		}
+		log.Info("[SkyXRD] Service " + svc.Name + " created in remote cluster!")
+	}
+	for _, cm := range configMaps.Items {
+		lastAppliedConfig, exists := cm.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
+		if !exists {
+			log.Error(nil, "Annotation 'kubectl.kubernetes.io/last-applied-configuration' not found on configmap "+cm.Name)
+			return err
+		}
+		var updatedCM corev1.ConfigMap
+		if err := json.Unmarshal([]byte(lastAppliedConfig), &updatedCM); err != nil {
+			log.Error(err, "Failed to unmarshal 'last-applied-configuration' annotation configmap "+cm.Name)
+			return err
+		}
+		if _, err := remoteClientset.CoreV1().ConfigMaps(cm.Namespace).Create(ctx, &updatedCM, metav1.CreateOptions{}); err != nil {
+			if !errors.IsAlreadyExists(err) {
+				log.Error(err, "Failed to create configmap in remote cluster")
+				return err
+			} else {
+				log.Info("[SkyXRD] ConfigMap " + cm.Name + " already exists in remote cluster")
+			}
+		}
+		log.Info("[SkyXRD] ConfigMap " + cm.Name + " created in remote cluster!")
 	}
 
 	return nil
@@ -656,6 +758,18 @@ func (r *SkyXRDReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				predicate.ResourceVersionChangedPredicate{},
 				predicate.GenerationChangedPredicate{},
 				predicate.AnnotationChangedPredicate{},
+				predicate.Funcs{
+					UpdateFunc: func(e event.UpdateEvent) bool {
+						oldObj, ok1 := e.ObjectOld.(*unstructured.Unstructured)
+						newObj, ok2 := e.ObjectNew.(*unstructured.Unstructured)
+						if !ok1 || !ok2 {
+							return false
+						}
+						oldStatus, _, _ := unstructured.NestedMap(oldObj.Object, "status")
+						newStatus, _, _ := unstructured.NestedMap(newObj.Object, "status")
+						return !reflect.DeepEqual(oldStatus, newStatus)
+					},
+				},
 			)).
 		Complete(r)
 }

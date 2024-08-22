@@ -56,7 +56,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log := log.FromContext(ctx)
 
 	// print the name and namespace of the ILPTask
-	log.Info("ILPTask [" + req.Name + "] Reconciler started")
+	// log.Info("ILPTask [" + req.Name + "] Reconciler started")
 
 	// Fetch the ILPTask instance
 	ilptask := &corev1alpha1.ILPTask{}
@@ -78,10 +78,10 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Check if both SkyApp and DataflowAttribute references are set
 	if ilptask.Spec.DataflowAttributeRef == (corev1alpha1.DataflowAttributeRef{}) ||
 		ilptask.Spec.SkyAppRef == (corev1alpha1.SkyAppRef{}) {
-		log.Info("ILPTask [" + req.Name + "] SkyApp or DataflowAttribute references are not set")
+		// log.Info("ILPTask [" + req.Name + "] SkyApp or DataflowAttribute references are not set")
 		return ctrl.Result{}, nil
 	} else {
-		log.Info("ILPTask [" + req.Name + "] SkyApp and DataflowAttribute references are set")
+		// log.Info("ILPTask [" + req.Name + "] SkyApp and DataflowAttribute references are set")
 	}
 
 	// At this point we have both SkyApp and DataflowAttribute references
@@ -93,7 +93,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		Name:      ilptask.Spec.SkyAppRef.Name,
 		Namespace: ilptask.Spec.SkyAppRef.Namespace,
 	}, skyapp); err == nil {
-		log.Info("ILPTask [" + req.Name + "]: SkyApp exists and was retrived")
+		// log.Info("ILPTask [" + req.Name + "]: SkyApp exists and was retrived")
 	} else {
 		log.Error(err, "ILPTask ["+req.Name+"]: Unable to fetch SkyApp, TODO: INVESTIGATE this case.")
 	}
@@ -104,7 +104,7 @@ func (r *ILPTaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		Name:      ilptask.Spec.DataflowAttributeRef.Name,
 		Namespace: ilptask.Spec.DataflowAttributeRef.Namespace,
 	}, dataflowattr); err == nil {
-		log.Info("ILPTask [" + req.Name + "]: DataflowAttribute exists and was retrived")
+		// log.Info("ILPTask [" + req.Name + "]: DataflowAttribute exists and was retrived")
 	} else {
 		log.Error(err, "ILPTask ["+req.Name+"]: Unable to fetch DataflowAttribute, TODO: INVESTIGATE this case.")
 	}
