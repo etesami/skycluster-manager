@@ -1,6 +1,6 @@
 package core
 
-type XProviderSetupParams struct {
+type skyProviderSetupParams struct {
 	Name       string
 	APIVersion string
 	Provider   string
@@ -11,7 +11,7 @@ type XProviderSetupParams struct {
 	IpSubnet   string
 }
 
-type XSkyClusterSetupParams struct {
+type skyK8SClusterSetupParams struct {
 	Name         string
 	APIVersion   string
 	Provider     string
@@ -23,11 +23,11 @@ type XSkyClusterSetupParams struct {
 	IsController string
 }
 
-const xSkyClusterSetupTemplate = `
+const skyK8SClusterSetupTemplate = `
 apiVersion: xrds.skycluster.savitestbed.ca/v1alpha1
-kind: XSkyCluster
+kind: SkyK8SCluster
 metadata:
-  name: xskycluster1-{{.Provider}}-{{.Region}}-{{.Type}}-{{.AppName}}-{{.Num}}
+  name: skycluster1-{{.Provider}}-{{.Region}}-{{.Type}}-{{.AppName}}-{{.Num}}
   labels:
     managed-by: skycluster
     skycluster/app-name: {{.AppName}}
@@ -43,7 +43,7 @@ spec:
     region: {{.Region}}
 `
 
-const xProviderSetupTemplate = `
+const skyProviderSetupTemplate = `
 apiVersion: xrds.skycluster.savitestbed.ca/v1alpha1
 metadata:
   name: {{.Name}}
@@ -54,7 +54,7 @@ metadata:
     skycluster/provider-name: {{.Provider}}
     skycluster/provider-region: {{.Region}}
     skycluster/provider-zone: {{.Zone}}
-kind: XProviderSetup
+kind: SkyProviderSetup
 spec:
   forProvider:
     vpnServer:

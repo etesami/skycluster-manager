@@ -20,14 +20,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"reflect"
 	"strconv"
 	"strings"
 	"text/template"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-
-	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +42,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -62,15 +61,16 @@ type SkyXRDReconciler struct {
 // +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=skyxrds/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core.skycluster-manager.savitestbed.ca,resources=skyxrds/finalizers,verbs=update
 // +kubebuilder:rbac:groups=xrds.skycluster.savitestbed.ca,resources=xprovidersetups/finalizers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=xrds.skycluster.savitestbed.ca,resources=skyk8scluster/finalizers,verbs=get;list;watch;create;update;patch;delete
 
 func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	log.Info("SkyXRD [" + req.Name + "] Reconciler started")
 
-	// We are watching SkyXRDs objects and also XSkyCluster objects
-	// (possibly we need to watch XProviderSetup objects as well)
-	// If (XSkyCluster) object:
+	// We are watching SkyXRDs objects and also SkyK8SCluster objects
+	// (possibly we need to watch SkyProviderSetup objects as well)
+	// If (SkyK8SCluster) object:
 	// 		1. Check if the object is ready
 	// 		2. If ready, submit the application to the overlay K8S
 
@@ -81,7 +81,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	gvk := schema.GroupVersionKind{
 		Group:   "xrds.skycluster.savitestbed.ca",
 		Version: "v1alpha1",
-		Kind:    "XSkyCluster",
+		Kind:    "SkyK8SCluster",
 	}
 
 	// Create an unstructured object
@@ -92,7 +92,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err := r.Get(ctx, req.NamespacedName, unstructuredObj); err != nil {
 		if !errors.IsNotFound(err) {
 			// Handle the error if it's not a NotFound error
-			log.Error(err, "Failed to get Unstructured object XSkyCluster")
+			log.Error(err, "Failed to get Unstructured object SkyK8SCluster")
 			return ctrl.Result{}, err
 		}
 		// If the error is not found we need to proceed to the next object (i.e. SkyXRD)
@@ -100,7 +100,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// Now, you have the unstructured object
 		kubeCfg, found, err := unstructured.NestedString(unstructuredObj.Object, "status", "k3s", "kubeconfig")
 		if err != nil {
-			log.Error(err, "Failed to get kubeconfig from XSkyCluster object")
+			log.Error(err, "Failed to get kubeconfig from SkyK8SCluster object")
 			return ctrl.Result{}, err
 		}
 		if found {
@@ -115,17 +115,19 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				log.Error(err, "Failed to submit the application to the remote cluster")
 				return ctrl.Result{}, err
 			}
+			// TODO: We should have a mechanism to follow up the status of the application
 		}
 	}
 
+	// This is the SkyXRD object reconciliation
 	// Get skyXRD the resource
 	var skyXRD corev1alpha1.SkyXRD
 	if err := r.Get(ctx, req.NamespacedName, &skyXRD); err != nil {
 		if errors.IsNotFound(err) {
 			// log.Info("SkyXRD [" + req.Name + "] not found, why?")
 			// In this case SkyXRD may be deleted.
-			// We need to ensure all composition created by this object are deleted as well.
-			// To do this, we need to delete finalizers from all the compositions that
+			// We need to ensure all composite resources created by this object are deleted as well.
+			// To do this, we need to delete finalizers from all the resources that
 			// are created by this object.
 			// We can do this by listing all the compositions and check if they have
 			// the OwenerReference to this object and delete their finalizers.
@@ -134,12 +136,12 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				{
 					Group:    "xrds.skycluster.savitestbed.ca",
 					Version:  "v1alpha1",
-					Resource: "xprovidersetups",
+					Resource: "skyprovidersetups",
 				},
 				{
 					Group:    "xrds.skycluster.savitestbed.ca",
 					Version:  "v1alpha1",
-					Resource: "xskyclusters",
+					Resource: "skyk8sclusters",
 				},
 			} {
 				// log.Info("SkyXRD [" + req.Name + "]   Checking resources for " + gvr.Resource)
@@ -156,6 +158,8 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 						if ownerRef.Name == req.Name {
 							// log.Info("SkyXRD [" + req.Name + "]    Removing finalizers obj " + obj.GetName())
 							// Remove the finalizers
+							// TODO: suprisingly, the following code does not work
+							// and does not throw any error. The finalizers are not removed.
 							obj.SetFinalizers([]string{})
 							if _, err := resourceClient.Update(ctx, &obj, metav1.UpdateOptions{}); err != nil {
 								log.Error(err, "Failed to remove finalizers")
@@ -172,6 +176,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
+	// SkyXRD object is found, we need to check the status
 	if skyXRD.Spec.TaskPlacement.Status != "Optimal" {
 		log.Info("SkyXRD [" + req.Name + "] Ignored. Status is: " + skyXRD.Spec.TaskPlacement.Status)
 		return ctrl.Result{}, nil
@@ -192,8 +197,8 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// and they require the same vservice (e.g. SkyK8SCluster). This case, we need to
 	// figure out which composed virtual service should be created only once,
 	// and which ones should be created multiple times.
-	// For example, for SkyK8SCluster, we should create only one XProviderSetup
-	// and multiple XSkyCluster composed virtual service if multiple tasks are placed
+	// For example, for SkyK8SCluster, we should create only one SkyProviderSetup
+	// and multiple SkyK8SCluster composed virtual service if multiple tasks are placed
 	// in the same provider with SkyK8SCluster vservice requirements.
 
 	// TODO: We need to deploy update procedure. Currently, we skip creating a
@@ -282,15 +287,15 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// Now we have the deployPlan, we can create the composite objects
 	// create a map of deployed resources per provider
-	// At this stage we assume there is no deployed vservices.
+	// At this stage we assume there is no deployed vservices, clean start.
 
 	// SkyXRD constains a list of providers (XSkyProvider),
-	// a list of K8S controllers (XSkyCluster with type ctrl) and
-	// a list of K8S agents (XSkyCluster with type agent).
+	// a list of K8S controllers (SkyK8SCluster with type ctrl) and
+	// a list of K8S agents (SkyK8SCluster with type agent).
 
-	// The controller creates the XProviderSetup, then
-	// Once the XProviderSetups are ready, creates XSkyCluster objects for each provider
-	// One is ctrl node and the rest are agent XSkyCluster.
+	// The controller creates the SkyProviderSetup, then
+	// Once the SkyProviderSetups are ready, creates SkyK8SCluster objects for each provider
+	// One is ctrl node and the rest are agent SkyK8SCluster.
 
 	deployedServices := make([]corev1alpha1.DeployedServices, 0)
 	preparedProviders := make(map[corev1alpha1.ProviderRef]corev1alpha1.SkyService)
@@ -298,33 +303,32 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	for pp, vss := range deployPlan {
 		for _, vs := range vss {
 			// We support only one type of virtual service for now: skyk8scluster
-			log.Info("SkyXRD [" + req.Name + "] Deploying on " + vs.Kind + "." + vs.APIVersion)
 			if strings.ToLower(vs.Kind) != "skyk8scluster" &&
 				strings.ToLower(vs.Kind) != "skyk8sclusters" {
 				log.Info("SkyXRD [" + req.Name + "]   Unsupported virtual service: " + vs.Kind)
 				continue
 			}
 
-			// For each provider, this composite resource consists of XProviderSetup and XSkyCluster
-			// The XProviderSetup is created only once for each provider
+			// For each provider, this composite resource consists of SkyProviderSetup and SkyK8SCluster
+			// The SkyProviderSetup is created only once for each provider
 			if _, ok := preparedProviders[pp]; !ok {
-				// Create XProviderSetup
+				// Create SkyProviderSetup
 				params := getParamsForProvider(pp, skyXRD.Spec.AppName)
 
-				if err := r.createXProviderSetup(ctx, &skyXRD, params); err != nil {
-					log.Error(err, "Failed to create XProviderSetup")
+				if err := r.createSkyProviderSetup(ctx, &skyXRD, params); err != nil {
+					log.Error(err, "Failed to create SkyProviderSetup")
 					return ctrl.Result{}, err
 				}
 				preparedProviders[pp] = corev1alpha1.SkyService{
 					Name:       params.Name,
 					APIVersion: params.APIVersion,
 				}
-				log.Info("SkyXRD [" + req.Name + "]    Created XProviderSetup (" + pp.Name + ", " + pp.Region + ", " + pp.Type + ")")
+				log.Info("SkyXRD [" + req.Name + "]    Created SkyProviderSetup (" + pp.Name + ", " + pp.Region + ", " + pp.Type + ")")
 			}
 
-			// Create XSkyCluster
+			// Create SkyK8SCluster
 			// We need to ensure there is only one ctrl object across all the providers
-			var params XSkyClusterSetupParams
+			var params skyK8SClusterSetupParams
 			if len(deployedServices) == 0 {
 				// This is the first object, it should be ctrl
 				params = getParamsForSkyCluster(pp, skyXRD.Spec.AppName, true, strconv.Itoa(len(deployedServices)+1))
@@ -333,8 +337,8 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				// create agents
 				params = getParamsForSkyCluster(pp, skyXRD.Spec.AppName, false, strconv.Itoa(len(deployedServices)+1))
 			}
-			if err := r.createXSkyClusterSetup(ctx, &skyXRD, params); err != nil {
-				log.Error(err, "Failed to create XProviderSetup")
+			if err := r.createSkyK8SClusterSetup(ctx, &skyXRD, params); err != nil {
+				log.Error(err, "Failed to create SkyProviderSetup")
 				return ctrl.Result{}, err
 			}
 			deployedServices = append(deployedServices, corev1alpha1.DeployedServices{
@@ -347,7 +351,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					},
 				},
 			})
-			log.Info("SkyXRD [" + req.Name + "]    Created XSkyCluster (" + params.Name + ", " + pp.Type + ", " + pp.Name + ")")
+			log.Info("SkyXRD [" + req.Name + "]    Created SkyK8SCluster (" + params.Name + ", " + pp.Type + ", " + pp.Name + ")")
 		}
 	}
 
@@ -364,29 +368,30 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			},
 		})
 	}
-	skyXRD.Status.DeployedProviders = deployedProviders
-
 	// Update the status of the SkyXRD object
+	skyXRD.Status.DeployedProviders = deployedProviders
 	skyXRD.Status.DeployedServices = deployedServices
 	if err := r.Status().Update(ctx, &skyXRD); err != nil {
 		log.Error(err, "Failed to update SkyXRD status")
 		return ctrl.Result{}, err
 	}
 
-	//    The controller observes the XRD objects and wait for them to become ready.
+	//    The controller observes the claim objects (skyProviderSetup and skyK8SCluster)
+	//    and wait for them to become ready.
 	//    We now have a Sky K8S cluster.
 
 	// 2. Given we have an overlay K8S now, the actual application should be submitted.
 	//    The kubeconfig of the overlay K8S should be fetched.
-	//    TODO: How to fetch the kubeconfig and how to use it to create a new clientset?
-	//    Within the controller, use the kubeconfig to create a new clientset
-	//    submit all deployment, service, etc. objects to the overlay K8S.
+	//    Within the controller, we use the kubeconfig to create a new clientset
+	//    then submit all deployment, service, etc. objects to the overlay K8S.
 
 	return ctrl.Result{}, nil
 }
 
 // Func to return appropriate params for the XRD template given the provider
-func getParamsForProvider(pp corev1alpha1.ProviderRef, appName string) XProviderSetupParams {
+// TODO: Potentially we should use config maps to retrive this data dynamically
+// rather than hardcoding it in the code.
+func getParamsForProvider(pp corev1alpha1.ProviderRef, appName string) skyProviderSetupParams {
 
 	ipGroup := "30"
 	ipSubnet := "210"
@@ -432,8 +437,8 @@ func getParamsForProvider(pp corev1alpha1.ProviderRef, appName string) XProvider
 		ipSubnet = "212"
 	}
 
-	params := XProviderSetupParams{
-		Name:       "xprovidersetup1-" + pp.Name + "-" + pp.Region + "-default-" + appName,
+	params := skyProviderSetupParams{
+		Name:       "skyprovidersetup1-" + pp.Name + "-" + pp.Region + "-default-" + appName,
 		APIVersion: "xrds.skycluster.savitestbed.ca",
 		Provider:   pp.Name,
 		Region:     pp.Region,
@@ -446,10 +451,10 @@ func getParamsForProvider(pp corev1alpha1.ProviderRef, appName string) XProvider
 	return params
 }
 
-func getParamsForSkyCluster(pp corev1alpha1.ProviderRef, appName string, ctrl bool, num string) XSkyClusterSetupParams {
+func getParamsForSkyCluster(pp corev1alpha1.ProviderRef, appName string, ctrl bool, num string) skyK8SClusterSetupParams {
 
-	params := XSkyClusterSetupParams{
-		Name: "xskycluster1-" + pp.Name + "-" + pp.Region + "-" + func(b bool) string {
+	params := skyK8SClusterSetupParams{
+		Name: "skyk8scluster1-" + pp.Name + "-" + pp.Region + "-" + func(b bool) string {
 			if b {
 				return "ctrl"
 			} else {
@@ -487,16 +492,16 @@ func getParamsForSkyCluster(pp corev1alpha1.ProviderRef, appName string, ctrl bo
 	return params
 }
 
-func (r *SkyXRDReconciler) createXSkyClusterSetup(ctx context.Context, skyxrd *corev1alpha1.SkyXRD, params XSkyClusterSetupParams) error {
+func (r *SkyXRDReconciler) createSkyK8SClusterSetup(ctx context.Context, skyxrd *corev1alpha1.SkyXRD, params skyK8SClusterSetupParams) error {
 	log := log.FromContext(ctx)
 
 	var gvr = schema.GroupVersionResource{
 		Group:    "xrds.skycluster.savitestbed.ca",
 		Version:  "v1alpha1",
-		Resource: "xskyclusters",
+		Resource: "skyk8sclusters",
 	}
 
-	tmpl, err := template.New("xrd").Parse(xSkyClusterSetupTemplate)
+	tmpl, err := template.New("xrd").Parse(skyK8SClusterSetupTemplate)
 	if err != nil {
 		log.Error(err, "Failed to parse template")
 		return err
@@ -520,7 +525,7 @@ func (r *SkyXRDReconciler) createXSkyClusterSetup(ctx context.Context, skyxrd *c
 
 	// set the ownership
 	obj.SetOwnerReferences([]metav1.OwnerReference{
-		metav1.OwnerReference{
+		{
 			APIVersion: skyxrd.APIVersion,
 			Kind:       skyxrd.Kind,
 			Name:       skyxrd.Name,
@@ -529,29 +534,29 @@ func (r *SkyXRDReconciler) createXSkyClusterSetup(ctx context.Context, skyxrd *c
 		},
 	})
 
-	resourceClient := r.DynamicClient.Resource(gvr)
+	resourceClient := r.DynamicClient.Resource(gvr).Namespace(skyxrd.Namespace)
 	// Create the object in the Kubernetes cluster
 	// err = r.Create(context.Background(), obj)
 	if _, err := resourceClient.Create(ctx, obj, metav1.CreateOptions{}); err != nil {
 		if !errors.IsAlreadyExists(err) {
-			log.Error(err, "Failed to create XSkyClusterSetup, maybe object already exists?")
+			log.Error(err, "Failed to create SkyK8SClusterSetup, maybe object already exists?")
 			return err
 		}
 	}
-	// log.Info("Created XSkyClusterSetup: " + obj.GetName())
+	// log.Info("Created SkyK8SClusterSetup: " + obj.GetName())
 	return nil
 }
 
-func (r *SkyXRDReconciler) createXProviderSetup(ctx context.Context, skyxrd *corev1alpha1.SkyXRD, params XProviderSetupParams) error {
+func (r *SkyXRDReconciler) createSkyProviderSetup(ctx context.Context, skyxrd *corev1alpha1.SkyXRD, params skyProviderSetupParams) error {
 	log := log.FromContext(ctx)
 
 	var gvr = schema.GroupVersionResource{
 		Group:    "xrds.skycluster.savitestbed.ca",
 		Version:  "v1alpha1",
-		Resource: "xprovidersetups",
+		Resource: "skyprovidersetups",
 	}
 
-	tmpl, err := template.New("xrd").Parse(xProviderSetupTemplate)
+	tmpl, err := template.New("xrd").Parse(skyProviderSetupTemplate)
 	if err != nil {
 		log.Error(err, "Failed to parse template")
 		return err
@@ -575,7 +580,7 @@ func (r *SkyXRDReconciler) createXProviderSetup(ctx context.Context, skyxrd *cor
 
 	// set the ownership
 	obj.SetOwnerReferences([]metav1.OwnerReference{
-		metav1.OwnerReference{
+		{
 			APIVersion: skyxrd.APIVersion,
 			Kind:       skyxrd.Kind,
 			Name:       skyxrd.Name,
@@ -584,16 +589,16 @@ func (r *SkyXRDReconciler) createXProviderSetup(ctx context.Context, skyxrd *cor
 		},
 	})
 
-	resourceClient := r.DynamicClient.Resource(gvr)
+	resourceClient := r.DynamicClient.Resource(gvr).Namespace(skyxrd.Namespace)
 	// Create the object in the Kubernetes cluster
 	// err = r.Create(context.Background(), obj)
 	if _, err := resourceClient.Create(ctx, obj, metav1.CreateOptions{}); err != nil {
 		if !errors.IsAlreadyExists(err) {
-			log.Error(err, "Failed to create XProviderSetup, maybe object already exists?")
+			log.Error(err, "Failed to create SkyProviderSetup")
 			return err
 		}
 	}
-	// log.Info("Created XProviderSetup: " + obj.GetName())
+	// log.Info("Created SkyProviderSetup: " + obj.GetName())
 	return nil
 }
 
@@ -744,7 +749,7 @@ func (r *SkyXRDReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	gvk := schema.GroupVersionKind{
 		Group:   "xrds.skycluster.savitestbed.ca",
 		Version: "v1alpha1",
-		Kind:    "XSkyCluster",
+		Kind:    "SkyK8SCluster",
 	}
 	unstructuredObj := &unstructured.Unstructured{}
 	unstructuredObj.SetGroupVersionKind(gvk)
@@ -756,8 +761,10 @@ func (r *SkyXRDReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			unstructuredObj,
 			&handler.EnqueueRequestForObject{}, builder.WithPredicates(
 				predicate.ResourceVersionChangedPredicate{},
-				predicate.GenerationChangedPredicate{},
-				predicate.AnnotationChangedPredicate{},
+			)).
+		Watches(
+			unstructuredObj,
+			&handler.EnqueueRequestForObject{}, builder.WithPredicates(
 				predicate.Funcs{
 					UpdateFunc: func(e event.UpdateEvent) bool {
 						oldObj, ok1 := e.ObjectOld.(*unstructured.Unstructured)
