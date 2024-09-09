@@ -12,35 +12,45 @@ type skyProviderSetupParams struct {
 }
 
 type skyK8SClusterSetupParams struct {
-	Name         string
-	APIVersion   string
-	Provider     string
-	Region       string
-	Type         string
-	AppName      string
-	Num          string
-	Size         string
-	IsController string
+	Name        string
+	AppName     string
+	CtrlNode    skyK8SNode
+	WorkerNodes []skyK8SNode
+}
+
+type skyK8SNode struct {
+	Size     string
+	Provider string
+	Region   string
 }
 
 const skyK8SClusterSetupTemplate = `
 apiVersion: xrds.skycluster.savitestbed.ca/v1alpha1
 kind: SkyK8SCluster
 metadata:
-  name: skycluster1-{{.Provider}}-{{.Region}}-{{.Type}}-{{.AppName}}-{{.Num}}
+  name: skyk8scluster-{{.AppName}}
   labels:
     managed-by: skycluster
     skycluster/app-name: {{.AppName}}
     skycluster/environment: dev
 spec: 
   forProvider:
-    flavor: {{.Size}}
-    image: ubuntu-22.04
-    k3s:
-      isController: {{.IsController}}
-  provider:
-    name: {{.Provider}}
-    region: {{.Region}}
+    ctrl:
+      flavor: {{.CtrlNode.Size}}
+      image: ubuntu-22.04
+      provider:
+        name: {{.CtrlNode.Provider}}
+        region: {{.CtrlNode.Region}}
+        zone: default
+    agents: 
+    {{- range .WorkerNodes }}
+      - flavor: {{.Size}}
+        image: ubuntu-22.04
+        provider:
+          name: {{.Provider}}
+          region: {{.Region}}
+          zone: default
+    {{- end }}
 `
 
 const skyProviderSetupTemplate = `

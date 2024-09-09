@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -223,32 +222,31 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// We need to get the vservice for each task
 		// This coming from SkyApp.Spec.AppConfig, e.g. frontend
 
-		// ensure pp in providers exists in the deployPlan
+		// We ensure each provider in providers has been added to
+		// the deployPlan, and later we initialize and prepare providers added here.
 		for _, pp := range providers {
 			if _, ok := deployPlan[pp]; !ok {
-				log.Info("SkyXRD [" + req.Name + "]:  Initilizing " + pp.Name + ", Region: " + pp.Region + ", Type: " + pp.Type)
 				deployPlan[pp] = make([]corev1alpha1.VServiceComposition, 0)
 			}
 		}
 
 		// Find APIVersion and Kind for this taskName
 		// and add it to the deployPlan for each provider
-		// we ensure if same service is required by multiple providers
+		// We ensure if same service is required by multiple providers
 		// each provider has its own composition
 		vss := make([]corev1alpha1.VServiceComposition, 0)
 		for _, task := range skyApp.Spec.AppConfig {
 			if task.Name == taskName {
 				// Get the virtual services for this task
 				// The task may have multiple virtual services
-				// But we manually adjust the vservice to skyk8s (this is the only one supported now)
-				// this means we only support one type of virtual service for now
-				// we can break the loop
-				// e.g. "skyk8scluster"
+				// TODO: Ensure the type of service is supported
+				// Important: We manually adjust the vservice to "skyk8scluster" (this is the only one supported now)
+				// this means we only support one type of virtual service for now.
 				for _, vserviceConstraint := range task.Constraints.VirtualServiceConstraints {
 					// TODO: remove this section
-					// manually adjust the vservice to skyk8s (this is the only one supported now)
+					// Manually adjust the vservice to skyk8scluster (this is the only one supported now)
 					vserviceConstraint.VirtualServiceName = "skyk8scluster"
-					log.Info("SkyXRD [" + req.Name + "]     Requested VService: " + vserviceConstraint.VirtualServiceName)
+					log.Info("SkyXRD [" + req.Name + "]  Task [" + task.Name + "] Requested VService: " + vserviceConstraint.VirtualServiceName)
 					// Now we can retrive the information from virtual services with api and kind
 					var vs corev1alpha1.VirtualService
 					if err := r.Get(ctx, client.ObjectKey{
@@ -262,6 +260,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					// e.g. kind: VirtualService
 					vss = append(vss, vs.Spec.VServiceComposition...)
 					// TODO: For now we assume only one virtual service is required by each task
+					// TODO: Figure out what should be done if multiple virtual services are required
 					// Remove the break if we need to support multiple virtual services
 					break
 				}
@@ -271,7 +270,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 
 		// Now add the virtual service composition to the deployPlan for all the providers
-		// this task is going to be placed
+		// that this task is going to be placed with
 		for _, pp := range providers {
 			deployPlan[pp] = append(deployPlan[pp], vss...)
 		}
@@ -281,27 +280,30 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	for pp, vss := range deployPlan {
 		log.Info("SkyXRD [" + req.Name + "] Provider: " + pp.Name + ", Region: " + pp.Region + ", Type: " + pp.Type)
 		for _, vs := range vss {
-			log.Info("SkyXRD [" + req.Name + "]     " + vs.Kind + "." + vs.APIVersion)
+			log.Info("SkyXRD [" + req.Name + "]     " + vs.Kind)
 		}
 	}
 
-	// Now we have the deployPlan, we can create the composite objects
-	// create a map of deployed resources per provider
+	// Now we have the deployPlan, we can create the composite objects.
+	// We create a map of deployed resources per provider
 	// At this stage we assume there is no deployed vservices, clean start.
-
-	// SkyXRD constains a list of providers (XSkyProvider),
-	// a list of K8S controllers (SkyK8SCluster with type ctrl) and
-	// a list of K8S agents (SkyK8SCluster with type agent).
+	// TODO: Figure iut how to update the deployed services
+	// if all/some services are already deployed.
 
 	// The controller creates the SkyProviderSetup, then
-	// Once the SkyProviderSetups are ready, creates SkyK8SCluster objects for each provider
-	// One is ctrl node and the rest are agent SkyK8SCluster.
+	// Then, creates SkyK8SCluster objects. The dependencies are handled
+	// by the template-go code.
 
 	deployedServices := make([]corev1alpha1.DeployedServices, 0)
 	preparedProviders := make(map[corev1alpha1.ProviderRef]corev1alpha1.SkyService)
+	skyK8SClusterParams := skyK8SClusterSetupParams{
+		Name:    "skyk8scluster-" + skyXRD.Spec.AppName,
+		AppName: skyXRD.Spec.AppName,
+	}
 
 	for pp, vss := range deployPlan {
 		for _, vs := range vss {
+			// TODO: Support multiple types of virtual services
 			// We support only one type of virtual service for now: skyk8scluster
 			if strings.ToLower(vs.Kind) != "skyk8scluster" &&
 				strings.ToLower(vs.Kind) != "skyk8sclusters" {
@@ -315,46 +317,73 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				// Create SkyProviderSetup
 				params := getParamsForProvider(pp, skyXRD.Spec.AppName)
 
-				if err := r.createSkyProviderSetup(ctx, &skyXRD, params); err != nil {
-					log.Error(err, "Failed to create SkyProviderSetup")
-					return ctrl.Result{}, err
-				}
+				// if err := r.createSkyProviderSetup(ctx, &skyXRD, params); err != nil {
+				// 	log.Error(err, "Failed to create SkyProviderSetup")
+				// 	return ctrl.Result{}, err
+				// }
 				preparedProviders[pp] = corev1alpha1.SkyService{
 					Name:       params.Name,
 					APIVersion: params.APIVersion,
 				}
-				log.Info("SkyXRD [" + req.Name + "]    Created SkyProviderSetup (" + pp.Name + ", " + pp.Region + ", " + pp.Type + ")")
+				log.Info("SkyXRD [" + req.Name + "] Created SkyProviderSetup (" + pp.Name + ", " + pp.Region + ", " + pp.Type + ")")
 			}
 
 			// Create SkyK8SCluster
 			// We need to ensure there is only one ctrl object across all the providers
-			var params skyK8SClusterSetupParams
+			// Toughts: Generally the controller should be placed within a cloud provider.
+			// We can iterate over the providers and create the ctrl object in the first found provider
+			// that is identified as a cloud provider.
+			// TODO: What if there is no cloud provider among the providers?
+
 			if len(deployedServices) == 0 {
 				// This is the first object, it should be ctrl
-				params = getParamsForSkyCluster(pp, skyXRD.Spec.AppName, true, strconv.Itoa(len(deployedServices)+1))
-			} else {
-				// We already should have a ctrl object
-				// create agents
-				params = getParamsForSkyCluster(pp, skyXRD.Spec.AppName, false, strconv.Itoa(len(deployedServices)+1))
+				// If the current provider is cloud provider, create ctrl object
+				// If it is not, find a cloud provider and create ctrl object there.
+				// Note in this case we still need to create agents in the current provider.
+				if pp.Type != "cloud" {
+					// Find a cloud provider
+					// TODO: Check if the assignment is correct
+					skyK8SClusterParams.CtrlNode = skyK8SNode{
+						Size:     "xlarge",
+						Provider: pp.Name,
+						Region:   pp.Region,
+					}
+				} else {
+					if cloud_pp, err := foundCloudProvider(preparedProviders); err != nil {
+						log.Error(err, "Failed to find a cloud provider")
+						// TODO: What should we do if there is no cloud provider?
+						return ctrl.Result{}, err
+					} else {
+						skyK8SClusterParams.CtrlNode = skyK8SNode{
+							Size:     "xlarge",
+							Provider: cloud_pp.Name,
+							Region:   cloud_pp.Region,
+						}
+					}
+				}
 			}
-			if err := r.createSkyK8SClusterSetup(ctx, &skyXRD, params); err != nil {
-				log.Error(err, "Failed to create SkyProviderSetup")
-				return ctrl.Result{}, err
-			}
-			deployedServices = append(deployedServices, corev1alpha1.DeployedServices{
-				Provider: pp,
-				Services: map[string]corev1alpha1.SkyService{
-					params.Name: {
-						Name:       params.Name,
-						APIVersion: params.APIVersion,
-						Type:       params.Type,
-					},
-				},
+
+			// Regardless of the controller, we create an agent for this provider
+			skyK8SClusterParams.WorkerNodes = append(skyK8SClusterParams.WorkerNodes, skyK8SNode{
+				Size:     "medium",
+				Provider: pp.Name,
+				Region:   pp.Region,
 			})
-			log.Info("SkyXRD [" + req.Name + "]    Created SkyK8SCluster (" + params.Name + ", " + pp.Type + ", " + pp.Name + ")")
 		}
 	}
 
+	log.Info("SkyXRD [" + req.Name + "]  SkyK8SCluster Params: ")
+	log.Info("SkyXRD [" + req.Name + "]   Ctrl Node: " + skyK8SClusterParams.CtrlNode.Provider + ", " + skyK8SClusterParams.CtrlNode.Region)
+	for _, wn := range skyK8SClusterParams.WorkerNodes {
+		log.Info("SkyXRD [" + req.Name + "]   Worker Node: " + wn.Provider + ", " + wn.Region)
+	}
+	if err := r.createSkyK8SClusterSetup(ctx, &skyXRD, skyK8SClusterParams); err != nil {
+		log.Error(err, "Failed to create SkyProviderSetup")
+		return ctrl.Result{}, err
+	}
+	log.Info("SkyXRD [" + req.Name + "] SkyK8SCluster Created.")
+
+	// TODO: Do we need to keep track of the DeployedProviders/DeployedServices?
 	deployedProviders := make([]corev1alpha1.DeployedServices, 0)
 	// Update the status of the SkyXRD object
 	for pp, ds := range preparedProviders {
@@ -386,6 +415,17 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	//    then submit all deployment, service, etc. objects to the overlay K8S.
 
 	return ctrl.Result{}, nil
+}
+
+func foundCloudProvider(preparedProviders map[corev1alpha1.ProviderRef]corev1alpha1.SkyService) (corev1alpha1.ProviderRef, error) {
+	// Find a cloud provider among the prepared providers
+	// If there is no cloud provider, return an error
+	for pp, _ := range preparedProviders {
+		if pp.Type == "cloud" {
+			return pp, nil
+		}
+	}
+	return corev1alpha1.ProviderRef{}, errors.NewNotFound(schema.GroupResource{}, "Cloud provider not found")
 }
 
 // Func to return appropriate params for the XRD template given the provider
@@ -446,47 +486,6 @@ func getParamsForProvider(pp corev1alpha1.ProviderRef, appName string) skyProvid
 		AppName:    appName,
 		IpGroup:    ipGroup,
 		IpSubnet:   ipSubnet,
-	}
-
-	return params
-}
-
-func getParamsForSkyCluster(pp corev1alpha1.ProviderRef, appName string, ctrl bool, num string) skyK8SClusterSetupParams {
-
-	params := skyK8SClusterSetupParams{
-		Name: "skyk8scluster1-" + pp.Name + "-" + pp.Region + "-" + func(b bool) string {
-			if b {
-				return "ctrl"
-			} else {
-				return "agent"
-			}
-		}(ctrl) + "-" + appName + "-" + num,
-		APIVersion: "xrds.skycluster.savitestbed.ca",
-		Provider:   pp.Name,
-		Region:     pp.Region,
-		AppName:    appName,
-		Type: func(b bool) string {
-			if b {
-				return "ctrl"
-			} else {
-				return "agent"
-			}
-		}(ctrl),
-		Num: num,
-		Size: func(b bool) string {
-			if b {
-				return "xlarge"
-			} else {
-				return "small"
-			}
-		}(ctrl),
-		IsController: func(b bool) string {
-			if b {
-				return "true"
-			} else {
-				return "false"
-			}
-		}(ctrl),
 	}
 
 	return params
