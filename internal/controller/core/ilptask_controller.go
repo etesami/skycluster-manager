@@ -526,6 +526,9 @@ func (r *ILPTaskReconciler) createSkyXRD(ctx context.Context, skyapp *corev1alph
 			TaskPlacement: result,
 		},
 	}
+	skyxrd.SetLabels(map[string]string{
+		"skycluster-manager.savitestbed.ca/app-name": skyapp.Spec.AppName,
+	})
 	if err := controllerutil.SetControllerReference(skyapp, skyxrd, r.Scheme); err != nil {
 		log.Error(err, "Failed to set owner reference on SkyXRD")
 		return err

@@ -97,25 +97,46 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// If the error is not found we need to proceed to the next object (i.e. SkyXRD)
 	} else {
 		// Now, you have the unstructured object
-		kubeCfg, found, err := unstructured.NestedString(unstructuredObj.Object, "status", "k3s", "kubeconfig")
-		if err != nil {
+		if kubeCfg, found, err := unstructured.NestedString(unstructuredObj.Object, "status", "k3s", "kubeconfig"); err != nil {
 			log.Error(err, "Failed to get kubeconfig from SkyK8SCluster object")
 			return ctrl.Result{}, err
-		}
-		if found {
+		} else if found {
 			// We have the kubeconfig and we can submit the application to the overlay K8S
 			log.Info("SkyXRD  Successfully retrieved the kubeconfig!")
-			appName, found, _ := unstructured.NestedString(unstructuredObj.Object, "metadata", "labels", "skycluster/app-name")
-			if !found {
+			if appName, found, _ := unstructured.NestedString(unstructuredObj.Object, "metadata", "labels", "skycluster/app-name"); !found {
 				// TODO: make sure the appName is supplied
-				appName = "default"
+				// appName = "default"
+				return ctrl.Result{}, errors.NewNotFound(schema.GroupResource{}, "app-name not found")
+			} else {
+				// We need to pass the deployment plan to the overlay K8S,
+				// the deployment plan is stored either in ILPTask object, or the SkyXRD object
+				// We need to retrive the SkyXRD object, however we don't have the SkyXRD name
+				// Instead, we list all the SkyXRD objects and find the one that has the same appName label
+				// List all SkyXRD objects and filter based on labels
+				var skyXRDList corev1alpha1.SkyXRDList
+				if err := r.List(ctx, &skyXRDList, client.MatchingLabels{
+					"skycluster-manager.savitestbed.ca/app-name": appName,
+				}); err != nil {
+					log.Error(err, "Failed to list SkyXRD objects with the given label")
+					return ctrl.Result{}, err
+				}
+				// I expect to have one SkyXRD object with the given label
+				if len(skyXRDList.Items) != 1 {
+					log.Info("SkyXRD  Found multiple or zero SkyXRD objects with the same app-name label")
+					return ctrl.Result{}, nil
+				}
+				deploymentPlan := skyXRDList.Items[0].Spec.TaskPlacement.Tasks
+				if err := r.submitAppToRemoteCluster(ctx, kubeCfg, req.Namespace, deploymentPlan, appName); err != nil {
+					log.Error(err, "Failed to submit the application to the remote cluster")
+					return ctrl.Result{}, err
+				}
+				// TODO: We should have a mechanism to follow up the status of the application
 			}
-			if err := r.submitAppToRemoteCluster(ctx, kubeCfg, req.Namespace, appName); err != nil {
-				log.Error(err, "Failed to submit the application to the remote cluster")
-				return ctrl.Result{}, err
-			}
-			// TODO: We should have a mechanism to follow up the status of the application
+		} else {
+			log.Info("SkyXRD  Kubeconfig not found in the SkyK8SCluster object, skipping")
+			return ctrl.Result{}, nil
 		}
+
 	}
 
 	// This is the SkyXRD object reconciliation
@@ -203,7 +224,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// TODO: We need to deploy update procedure. Currently, we skip creating a
 	// deployment plan if services are deployed already.
 
-	if len(skyXRD.Status.DeployedServices) > 0 {
+	if len(skyXRD.Status.DeployedProviders) > 0 {
 		// TODO: how to update deployed services?
 		log.Info("SkyXRD [" + req.Name + "] Services are already deployed, skipping the deployment plan")
 		return ctrl.Result{}, nil
@@ -294,7 +315,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Then, creates SkyK8SCluster objects. The dependencies are handled
 	// by the template-go code.
 
-	deployedServices := make([]corev1alpha1.DeployedServices, 0)
+	// deployedServices := make([]corev1alpha1.DeployedServices, 0)
 	preparedProviders := make(map[corev1alpha1.ProviderRef]corev1alpha1.SkyService)
 	skyK8SClusterParams := skyK8SClusterSetupParams{
 		Name:    "skyk8scluster-" + skyXRD.Spec.AppName,
@@ -317,6 +338,7 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				// Create SkyProviderSetup
 				params := getParamsForProvider(pp, skyXRD.Spec.AppName)
 
+				// TODO: Uncomment the following line to create SkyProviderSetup
 				// if err := r.createSkyProviderSetup(ctx, &skyXRD, params); err != nil {
 				// 	log.Error(err, "Failed to create SkyProviderSetup")
 				// 	return ctrl.Result{}, err
@@ -335,12 +357,12 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			// that is identified as a cloud provider.
 			// TODO: What if there is no cloud provider among the providers?
 
-			if len(deployedServices) == 0 {
+			if skyK8SClusterParams.CtrlNode == (skyK8SNode{}) {
 				// This is the first object, it should be ctrl
 				// If the current provider is cloud provider, create ctrl object
 				// If it is not, find a cloud provider and create ctrl object there.
 				// Note in this case we still need to create agents in the current provider.
-				if pp.Type != "cloud" {
+				if pp.Type == "cloud" {
 					// Find a cloud provider
 					// TODO: Check if the assignment is correct
 					skyK8SClusterParams.CtrlNode = skyK8SNode{
@@ -399,7 +421,8 @@ func (r *SkyXRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	// Update the status of the SkyXRD object
 	skyXRD.Status.DeployedProviders = deployedProviders
-	skyXRD.Status.DeployedServices = deployedServices
+	// TODO: Remove DeployedServices from the status
+	// skyXRD.Status.DeployedServices = deployedServices
 	if err := r.Status().Update(ctx, &skyXRD); err != nil {
 		log.Error(err, "Failed to update SkyXRD status")
 		return ctrl.Result{}, err
@@ -601,13 +624,13 @@ func (r *SkyXRDReconciler) createSkyProviderSetup(ctx context.Context, skyxrd *c
 	return nil
 }
 
-func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubeconfig string, namespace string, appName string) error {
+func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kcfg string, ns string, dPlan map[string][]corev1alpha1.ProviderRef, appName string) error {
 	log := log.FromContext(ctx)
 	// log.Info("SkyXRD  Submitting the application to the remote cluster")
 	// List all deployments with the label "sky" in the current cluster
 	deployments := &appsv1.DeploymentList{}
 	listOpts := []client.ListOption{
-		client.InNamespace(namespace),
+		client.InNamespace(ns),
 		client.MatchingLabels(map[string]string{
 			"skycluster-manager.savitestbed.ca/managed-by": "skycluster",
 			"skycluster-manager.savitestbed.ca/app-name":   appName,
@@ -626,7 +649,7 @@ func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubecon
 	// Services
 	services := &corev1.ServiceList{}
 	listOpts = []client.ListOption{
-		client.InNamespace(namespace),
+		client.InNamespace(ns),
 		client.MatchingLabels(map[string]string{
 			"skycluster-manager.savitestbed.ca/managed-by": "skycluster",
 			"skycluster-manager.savitestbed.ca/app-name":   appName,
@@ -644,7 +667,7 @@ func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubecon
 
 	configMaps := &corev1.ConfigMapList{}
 	listOpts = []client.ListOption{
-		client.InNamespace(namespace),
+		client.InNamespace(ns),
 		client.MatchingLabels(map[string]string{
 			"skycluster-manager.savitestbed.ca/managed-by": "skycluster",
 			"skycluster-manager.savitestbed.ca/app-name":   appName,
@@ -661,7 +684,7 @@ func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubecon
 	}
 
 	// Build the config from the kubeconfig string
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kcfg))
 	if err != nil {
 		return err
 	}
@@ -672,29 +695,59 @@ func (r *SkyXRDReconciler) submitAppToRemoteCluster(ctx context.Context, kubecon
 		return err
 	}
 
-	// Submit each deployment to the remote cluster
-	for _, dep := range deployments.Items {
-		lastAppliedConfig, exists := dep.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
-		if !exists {
-			log.Error(nil, "Annotation 'kubectl.kubernetes.io/last-applied-configuration' not found on deployment")
-			return err
-		}
-		var updatedDep appsv1.Deployment
-		if err := json.Unmarshal([]byte(lastAppliedConfig), &updatedDep); err != nil {
-			log.Error(err, "Failed to unmarshal 'last-applied-configuration' annotation Deployment "+dep.Name)
-			return err
-		}
-		if _, err := remoteClientset.AppsV1().Deployments(dep.Namespace).Create(ctx, &updatedDep, metav1.CreateOptions{}); err != nil {
-			if !errors.IsAlreadyExists(err) {
-				log.Error(err, "Failed to create deployment in remote cluster")
-				return err
-			} else {
-				log.Info("[SkyXRD] Deployment " + dep.Name + " already exists in remote cluster!")
+	// Based on deployment plan, we need to create the deployments, services, and configmaps
+	for task, providers := range dPlan {
+		for _, pp := range providers {
+			log.Info("SkyXRD  Task: " + task + ", Provider: " + pp.Name + ", Region: " + pp.Region + ", Type: " + pp.Type)
+			// We know the task name and its provider settings, let's find the deployment
+			for _, dep := range deployments.Items {
+				if dep.Name == task {
+					// We have the deployment, let's create it in the remote cluster
+					lastAppliedConfig, exists := dep.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
+					if !exists {
+						log.Error(nil, "Annotation 'kubectl.kubernetes.io/last-applied-configuration' not found on deployment")
+						return err
+					}
+					var updatedDep appsv1.Deployment
+					if err := json.Unmarshal([]byte(lastAppliedConfig), &updatedDep); err != nil {
+						log.Error(err, "Failed to unmarshal 'last-applied-configuration' annotation Deployment "+dep.Name)
+						return err
+					}
+					// Update the deplotment name and labels
+					updatedDep.Name = dep.Name + "-" + pp.Name + "-" + pp.Region
+					updatedDep.Labels["skycluster-manager.savitestbed.ca/provider-name"] = pp.Name
+					updatedDep.Labels["skycluster/provider-name"] = pp.Name
+					updatedDep.Labels["skycluster-manager.savitestbed.ca/provider-region"] = pp.Region
+					updatedDep.Labels["skycluster/provider-region"] = pp.Region
+
+					// We also need to set node selector for the deployment
+					updatedDep.Spec.Template.Spec.NodeSelector = map[string]string{
+						"skycluster/provider-name":   pp.Name,
+						"skycluster/provider-region": pp.Region,
+					}
+
+					// Are we ready to create the deployment in the remote cluster?
+					if _, err := remoteClientset.AppsV1().Deployments(dep.Namespace).Create(ctx, &updatedDep, metav1.CreateOptions{}); err != nil {
+						if !errors.IsAlreadyExists(err) {
+							log.Error(err, "Failed to create deployment in remote cluster")
+							return err
+						} else {
+							log.Info("[SkyXRD] Deployment " + dep.Name + " already exists in remote cluster!")
+						}
+					}
+					log.Info("[SkyXRD] Deployment " + dep.Name + " created in remote cluster!")
+
+					// We found the deployment, we can break here
+					break
+				}
 			}
 		}
-		log.Info("[SkyXRD] Deployment " + dep.Name + " created in remote cluster!")
+		// I expect all deployments to be created in the remote cluster now
+		// according to the task placement plan we have
 	}
 
+	// I expect services do not need to be replicated as deployments do
+	// Since services use app selector lable to select the deployments
 	for _, svc := range services.Items {
 		lastAppliedConfig, exists := svc.Annotations["kubectl.kubernetes.io/last-applied-configuration"]
 		if !exists {
