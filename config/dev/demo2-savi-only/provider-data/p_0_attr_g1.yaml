@@ -1,0 +1,585 @@
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattr-aws-us-east-1-cloud
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: provattr-config
+    skycluster-manager.savitestbed.ca/provider-name: aws
+    skycluster-manager.savitestbed.ca/provider-region: us-east-1
+    skycluster-manager.savitestbed.ca/provider-type: cloud
+spec:
+  providerReference:
+     name: aws
+     region: us-east-1
+     type: cloud
+  providerMetrics:
+    - dstProviderReference: 
+        name: aws
+        region: ca-central-1
+        type: cloud
+      latency: "192.81ms"
+      egressDataCost: "66"
+    - dstProviderReference: 
+        name: gcp
+        region: us-east1
+        type: cloud
+      latency: "26.7ms"
+      egressDataCost: "87"
+    - dstProviderReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      latency: "17.7ms"
+      egressDataCost: "67"
+    - dstProviderReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      latency: "146.25ms"
+      egressDataCost: "71"
+    - dstProviderReference: 
+        name: azure
+        region: canadaeast
+        type: edge
+      latency: "260.16ms"
+      egressDataCost: "83"
+    - dstProviderReference: 
+        name: azure
+        region: centralus
+        type: edge
+      latency: "106.99ms"
+      egressDataCost: "81"
+    - dstProviderReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      latency: "194.59ms"
+      egressDataCost: "76"
+    - dstProviderReference: 
+        name: savi
+        region: vaughan
+        type: near-the-edge
+      latency: "517.38ms"
+      egressDataCost: "36"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattr-aws-ca-central-1-cloud
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: provattr-config
+    skycluster-manager.savitestbed.ca/provider-name: aws
+    skycluster-manager.savitestbed.ca/provider-region: ca-central-1
+    skycluster-manager.savitestbed.ca/provider-type: cloud
+spec:
+  providerReference:
+     name: aws
+     region: ca-central-1
+     type: cloud
+  providerMetrics:
+    - dstProviderReference: 
+        name: aws
+        region: us-east-1
+        type: cloud
+      latency: "138.18ms"
+      egressDataCost: "37"
+    - dstProviderReference: 
+        name: gcp
+        region: us-east1
+        type: cloud
+      latency: "189.68ms"
+      egressDataCost: "17"
+    - dstProviderReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      latency: "105.84ms"
+      egressDataCost: "51"
+    - dstProviderReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      latency: "84.51ms"
+      egressDataCost: "60"
+    - dstProviderReference: 
+        name: azure
+        region: canadaeast
+        type: edge
+      latency: "113.26ms"
+      egressDataCost: "77"
+    - dstProviderReference: 
+        name: azure
+        region: centralus
+        type: edge
+      latency: "210.71ms"
+      egressDataCost: "59"
+    - dstProviderReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      latency: "27.38ms"
+      egressDataCost: "59"
+    - dstProviderReference: 
+        name: savi
+        region: vaughan
+        type: near-the-edge
+      latency: "121.8ms"
+      egressDataCost: "26"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattr-gcp-us-east1-cloud
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: provattr-config
+    skycluster-manager.savitestbed.ca/provider-name: gcp
+    skycluster-manager.savitestbed.ca/provider-region: us-east1
+    skycluster-manager.savitestbed.ca/provider-type: cloud
+spec:
+  providerReference:
+     name: gcp
+     region: us-east1
+     type: cloud
+  providerMetrics:
+    - dstProviderReference: 
+        name: aws
+        region: us-east-1
+        type: cloud
+      latency: "34.42ms"
+      egressDataCost: "82"
+    - dstProviderReference: 
+        name: aws
+        region: ca-central-1
+        type: cloud
+      latency: "144.81ms"
+      egressDataCost: "78"
+    - dstProviderReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      latency: "41.34ms"
+      egressDataCost: "57"
+    - dstProviderReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      latency: "287.92ms"
+      egressDataCost: "21"
+    - dstProviderReference: 
+        name: azure
+        region: canadaeast
+        type: edge
+      latency: "199.37ms"
+      egressDataCost: "52"
+    - dstProviderReference: 
+        name: azure
+        region: centralus
+        type: edge
+      latency: "97.04ms"
+      egressDataCost: "96"
+    - dstProviderReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      latency: "110.88ms"
+      egressDataCost: "85"
+    - dstProviderReference: 
+        name: savi
+        region: vaughan
+        type: near-the-edge
+      latency: "260.54ms"
+      egressDataCost: "49"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattr-gcp-us-west1-cloud
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: provattr-config
+    skycluster-manager.savitestbed.ca/provider-name: gcp
+    skycluster-manager.savitestbed.ca/provider-region: us-west1
+    skycluster-manager.savitestbed.ca/provider-type: cloud
+spec:
+  providerReference:
+     name: gcp
+     region: us-west1
+     type: cloud
+  providerMetrics:
+    - dstProviderReference: 
+        name: aws
+        region: us-east-1
+        type: cloud
+      latency: "12.09ms"
+      egressDataCost: "39"
+    - dstProviderReference: 
+        name: aws
+        region: ca-central-1
+        type: cloud
+      latency: "382.07ms"
+      egressDataCost: "98"
+    - dstProviderReference: 
+        name: gcp
+        region: us-east1
+        type: cloud
+      latency: "190.37ms"
+      egressDataCost: "87"
+    - dstProviderReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      latency: "446.08ms"
+      egressDataCost: "72"
+    - dstProviderReference: 
+        name: azure
+        region: canadaeast
+        type: edge
+      latency: "135.56ms"
+      egressDataCost: "90"
+    - dstProviderReference: 
+        name: azure
+        region: centralus
+        type: edge
+      latency: "56.61ms"
+      egressDataCost: "17"
+    - dstProviderReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      latency: "186.55ms"
+      egressDataCost: "85"
+    - dstProviderReference: 
+        name: savi
+        region: vaughan
+        type: near-the-edge
+      latency: "262.25ms"
+      egressDataCost: "38"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattr-azure-canadacentral-edge
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: provattr-config
+    skycluster-manager.savitestbed.ca/provider-name: azure
+    skycluster-manager.savitestbed.ca/provider-region: canadacentral
+    skycluster-manager.savitestbed.ca/provider-type: edge
+spec:
+  providerReference:
+     name: azure
+     region: canadacentral
+     type: edge
+  providerMetrics:
+    - dstProviderReference: 
+        name: aws
+        region: us-east-1
+        type: cloud
+      latency: "191.67ms"
+      egressDataCost: "67"
+    - dstProviderReference: 
+        name: aws
+        region: ca-central-1
+        type: cloud
+      latency: "93.24ms"
+      egressDataCost: "42"
+    - dstProviderReference: 
+        name: gcp
+        region: us-east1
+        type: cloud
+      latency: "236.91ms"
+      egressDataCost: "38"
+    - dstProviderReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      latency: "214.45ms"
+      egressDataCost: "88"
+    - dstProviderReference: 
+        name: azure
+        region: canadaeast
+        type: edge
+      latency: "107.12ms"
+      egressDataCost: "33"
+    - dstProviderReference: 
+        name: azure
+        region: centralus
+        type: edge
+      latency: "159.77ms"
+      egressDataCost: "25"
+    - dstProviderReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      latency: "101.7ms"
+      egressDataCost: "37"
+    - dstProviderReference: 
+        name: savi
+        region: vaughan
+        type: near-the-edge
+      latency: "170.37ms"
+      egressDataCost: "75"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattr-azure-canadaeast-edge
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: provattr-config
+    skycluster-manager.savitestbed.ca/provider-name: azure
+    skycluster-manager.savitestbed.ca/provider-region: canadaeast
+    skycluster-manager.savitestbed.ca/provider-type: edge
+spec:
+  providerReference:
+     name: azure
+     region: canadaeast
+     type: edge
+  providerMetrics:
+    - dstProviderReference: 
+        name: aws
+        region: us-east-1
+        type: cloud
+      latency: "467.58ms"
+      egressDataCost: "44"
+    - dstProviderReference: 
+        name: aws
+        region: ca-central-1
+        type: cloud
+      latency: "58.2ms"
+      egressDataCost: "33"
+    - dstProviderReference: 
+        name: gcp
+        region: us-east1
+        type: cloud
+      latency: "134.28ms"
+      egressDataCost: "25"
+    - dstProviderReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      latency: "192.23ms"
+      egressDataCost: "62"
+    - dstProviderReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      latency: "76.4ms"
+      egressDataCost: "78"
+    - dstProviderReference: 
+        name: azure
+        region: centralus
+        type: edge
+      latency: "257.07ms"
+      egressDataCost: "50"
+    - dstProviderReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      latency: "62.17ms"
+      egressDataCost: "40"
+    - dstProviderReference: 
+        name: savi
+        region: vaughan
+        type: near-the-edge
+      latency: "107.3ms"
+      egressDataCost: "79"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattr-azure-centralus-edge
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: provattr-config
+    skycluster-manager.savitestbed.ca/provider-name: azure
+    skycluster-manager.savitestbed.ca/provider-region: centralus
+    skycluster-manager.savitestbed.ca/provider-type: edge
+spec:
+  providerReference:
+     name: azure
+     region: centralus
+     type: edge
+  providerMetrics:
+    - dstProviderReference: 
+        name: aws
+        region: us-east-1
+        type: cloud
+      latency: "48.57ms"
+      egressDataCost: "63"
+    - dstProviderReference: 
+        name: aws
+        region: ca-central-1
+        type: cloud
+      latency: "250.09ms"
+      egressDataCost: "68"
+    - dstProviderReference: 
+        name: gcp
+        region: us-east1
+        type: cloud
+      latency: "273.82ms"
+      egressDataCost: "77"
+    - dstProviderReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      latency: "77.74ms"
+      egressDataCost: "55"
+    - dstProviderReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      latency: "248.64ms"
+      egressDataCost: "95"
+    - dstProviderReference: 
+        name: azure
+        region: canadaeast
+        type: edge
+      latency: "207.4ms"
+      egressDataCost: "36"
+    - dstProviderReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      latency: "204.27ms"
+      egressDataCost: "22"
+    - dstProviderReference: 
+        name: savi
+        region: vaughan
+        type: near-the-edge
+      latency: "214.92ms"
+      egressDataCost: "75"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattr-savi-scinet-cloud
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: provattr-config
+    skycluster-manager.savitestbed.ca/provider-name: savi
+    skycluster-manager.savitestbed.ca/provider-region: scinet
+    skycluster-manager.savitestbed.ca/provider-type: cloud
+spec:
+  providerReference:
+     name: savi
+     region: scinet
+     type: cloud
+  providerMetrics:
+    - dstProviderReference: 
+        name: aws
+        region: us-east-1
+        type: cloud
+      latency: "454.56ms"
+      egressDataCost: "90"
+    - dstProviderReference: 
+        name: aws
+        region: ca-central-1
+        type: cloud
+      latency: "27.11ms"
+      egressDataCost: "77"
+    - dstProviderReference: 
+        name: gcp
+        region: us-east1
+        type: cloud
+      latency: "163.66ms"
+      egressDataCost: "74"
+    - dstProviderReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      latency: "140.96ms"
+      egressDataCost: "7"
+    - dstProviderReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      latency: "34.58ms"
+      egressDataCost: "4"
+    - dstProviderReference: 
+        name: azure
+        region: canadaeast
+        type: edge
+      latency: "2.57ms"
+      egressDataCost: "11"
+    - dstProviderReference: 
+        name: azure
+        region: centralus
+        type: edge
+      latency: "192.12ms"
+      egressDataCost: "7"
+    - dstProviderReference: 
+        name: savi
+        region: vaughan
+        type: near-the-edge
+      latency: "81.94ms"
+      egressDataCost: "81"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: ProviderAttribute
+metadata:
+  name: providerattr-savi-vaughan-near-the-edge
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: provattr-config
+    skycluster-manager.savitestbed.ca/provider-name: savi
+    skycluster-manager.savitestbed.ca/provider-region: vaughan
+    skycluster-manager.savitestbed.ca/provider-type: near-the-edge
+spec:
+  providerReference:
+     name: savi
+     region: vaughan
+     type: near-the-edge
+  providerMetrics:
+    - dstProviderReference: 
+        name: aws
+        region: us-east-1
+        type: cloud
+      latency: "249.47ms"
+      egressDataCost: "47"
+    - dstProviderReference: 
+        name: aws
+        region: ca-central-1
+        type: cloud
+      latency: "80.41ms"
+      egressDataCost: "53"
+    - dstProviderReference: 
+        name: gcp
+        region: us-east1
+        type: cloud
+      latency: "169.48ms"
+      egressDataCost: "25"
+    - dstProviderReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      latency: "228.06ms"
+      egressDataCost: "99"
+    - dstProviderReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      latency: "68.24ms"
+      egressDataCost: "22"
+    - dstProviderReference: 
+        name: azure
+        region: canadaeast
+        type: edge
+      latency: "155.83ms"
+      egressDataCost: "19"
+    - dstProviderReference: 
+        name: azure
+        region: centralus
+        type: edge
+      latency: "285.93ms"
+      egressDataCost: "49"
+    - dstProviderReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      latency: "27.24ms"
+      egressDataCost: "73"

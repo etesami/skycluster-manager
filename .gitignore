@@ -21,3 +21,5 @@ config/dev/scripts/output
 
 # Go workspace file
 go.work
+
+.vscode

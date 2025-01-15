@@ -1,0 +1,30 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: DataflowAttribute
+metadata:
+  name: skyapp1
+spec:
+  appName: skyapp1
+  connections:
+  - destinations:
+    - constraints:
+        latency: 900ms
+      name: c3
+    - constraints:
+        latency: 900ms
+      name: c2
+    source: c1
+  - destinations:
+    - constraints:
+        latency: 909ms
+      name: c4
+    source: c2
+  - destinations:
+    - constraints:
+        latency: 900ms
+      name: c5
+    source: c3
+  - destinations:
+    - constraints:
+        latency: 900ms
+      name: c5
+    source: c4

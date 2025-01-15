@@ -4,8 +4,9 @@ metadata:
   name: my-deployment
   annotations:
     skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: app-test
   labels:
-    app: my-app
+    skycluster-manager.savitestbed.ca/app-name: app-test
     skycluster-manager.savitestbed.ca/managed-by: skycluster
 spec:
   replicas: 3

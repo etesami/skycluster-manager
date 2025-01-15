@@ -6,33 +6,33 @@ spec:
   appConfig:
   - constraints:
       locationConstraints:
-      - providerType: near-the-edge
+      - providerType: cloud
       virtualServiceConstraints:
-      - virtualServiceName: vs2
+      - virtualServiceName: skyk8scluster
     name: C1
   - constraints:
       locationConstraints:
-      - providerType: edge
+      - providerType: cloud
       virtualServiceConstraints:
-      - virtualServiceName: vs5
+      - virtualServiceName: skyk8scluster
     name: C2
   - constraints:
       locationConstraints:
-      - providerType: near-the-edge
+      - providerType: cloud
       virtualServiceConstraints:
-      - virtualServiceName: vs5
+      - virtualServiceName: skyk8scluster
     name: C3
   - constraints:
       locationConstraints:
       - providerType: cloud
       virtualServiceConstraints:
-      - virtualServiceName: vs3
+      - virtualServiceName: skyk8scluster
     name: C4
   - constraints:
       locationConstraints:
       - providerType: cloud
       virtualServiceConstraints:
-      - virtualServiceName: vs4
+      - virtualServiceName: skyk8scluster
     name: C5
   appName: app1-c5-p20-skyapp
-  namespace: default
+  # namespace: default

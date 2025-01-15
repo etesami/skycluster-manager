@@ -1,0 +1,214 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c1
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: c1
+  template:
+    metadata:
+      labels:
+        app: c1
+    spec:
+      containers:
+      - name: c1
+        image: busybox
+        command: [ "sh", "-c", "while true; do ping -c 1 ping-server-3; sleep 1; done" ]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c2
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: c2
+  template:
+    metadata:
+      labels:
+        app: c2
+    spec:
+      containers:
+      - name: c2
+        image: busybox
+        command: [ "sh", "-c", "while true; do ping -c 1 ping-server-4; sleep 1; done" ]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c3
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: c3
+  template:
+    metadata:
+      labels:
+        app: c3
+    spec:
+      containers:
+      - name: c3
+        image: busybox
+        command: [ "sh", "-c", "while true; do ping -c 1 ping-server-5; sleep 1; done" ]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c4
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: c4
+  template:
+    metadata:
+      labels:
+        app: c4
+    spec:
+      containers:
+      - name: c4
+        image: busybox
+        command: [ "sh", "-c", "while true; do (ping -c 1 ping-server-2 & ping -c 1 ping-server-3 & wait); sleep 1; done" ]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: c5
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: c5
+  template:
+    metadata:
+      labels:
+        app: c5
+    spec:
+      containers:
+      - name: c5
+        image: busybox
+        command: [ "sh", "-c", "while true; do ping -c 1 ping-server-5; sleep 1; done" ]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ping-server-1
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  selector:
+    app: c1
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ping-server-2
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  selector:
+    app: c2
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ping-server-3
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  selector:
+    app: c3
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ping-server-4
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  selector:
+    app: c4
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ping-server-5
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+  labels:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/app-name: skyapp1
+spec:
+  selector:
+    app: c5
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

@@ -1,38 +1,40 @@
 apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
 kind: SkyApp
 metadata:
-  name: app4-c5-p20-skyapp
+  name: skyapp1
 spec:
   appConfig:
   - constraints:
       locationConstraints:
-      - providerType: cloud
+      - providerType: edge # near-the-edge, cloud
+        # providerName: # aws, azure, gcp, ...
+        # region: # us-west, us-east, ...
       virtualServiceConstraints:
       - virtualServiceName: skyk8scluster
-    name: C1
+    name: c1
   - constraints:
       locationConstraints:
       - providerType: cloud
       virtualServiceConstraints:
       - virtualServiceName: skyk8scluster
-    name: C2
+    name: c2
   - constraints:
       locationConstraints:
       - providerType: cloud
       virtualServiceConstraints:
       - virtualServiceName: skyk8scluster
-    name: C3
+    name: c3
   - constraints:
       locationConstraints:
       - providerType: cloud
       virtualServiceConstraints:
       - virtualServiceName: skyk8scluster
-    name: C4
+    name: c4
   - constraints:
       locationConstraints:
-      - providerType: cloud
+      - providerType: near-the-edge
       virtualServiceConstraints:
       - virtualServiceName: skyk8scluster
-    name: C5
-  appName: app4-c5-p20-skyapp
+    name: c5
+  appName: skyapp1
   # namespace: default

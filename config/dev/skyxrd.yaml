@@ -1,0 +1,22 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: SkyXRD
+metadata:
+  name: app1-test-skyxrd
+  namespace: default
+spec:
+  appName: app1-test-skyxrd
+  deploymentPlan:
+    status: Optimal
+    tasks:
+      C1:
+        - name: savi
+          region: scinet
+          type: cloud
+      C2:
+        - name: savi
+          region: scinet
+          type: cloud
+      C3:
+        - name: savi
+          region: scinet
+          type: cloud

@@ -12,25 +12,35 @@ spec:
       constraints:
         locationConstraints:
           # This is a composite constraints
-          - providerName: gcp
+          # 
+          # providerType: cloud ensure 'frontend' is deployed on a cloud provider
+          # TODO: What if I want to ensure the 'frontend' is deployed across all providers with typed [cloud]?
+          # Currently, one needs to specify the providerName and region and providerType 
+          # for all (provider, region, type) combinations. Perhaps another approach is:
+          # TODO: Maybe we can add a new field 'mode' with value 'all/any' 
+          #   'all' means all providers with type [cloud] and 
+          #   'any' means even one provider with type [cloud] is ok
+          # 
+          - # providerName: gcp
             # This ensures the optimizer will only select gcp providers
             # region: us-west1
             # This ensures the optimizer will only select gcp providers in us-west1 region
+            providerType: cloud
             # providerType: edge
             # This ensures the optimizer will only select gcp providers in us-west1 of type edge
         virtualServiceConstraints:
           - virtualServiceName: vs1
-          - virtualServiceName: vs2
     - name: backend
       constraints:
         locationConstraints:
-          - providerName: savi
+          - providerType: cloud
+          # - providerType: near-the-edge
         virtualServiceConstraints:
-          - virtualServiceName: vs1
+          - virtualServiceName: vs2
     - name: payment
       constraints:
         locationConstraints:
-          - providerName: provider100
+          - providerType: cloud
         virtualServiceConstraints:
           - virtualServiceName: vs3
 ---
@@ -52,11 +62,3 @@ spec:
           constraints:
             latency: 500ms
 ---
-# apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
-# kind: ILPTask
-# metadata:
-#   name: ilptask-sample
-# spec:
-#   problemDefinition: |
-#     import numpy as np
-# ---

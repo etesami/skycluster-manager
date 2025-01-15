@@ -163,6 +163,18 @@ rules:
 - apiGroups:
   - xrds.skycluster.savitestbed.ca
   resources:
+  - skyk8scluster/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - xrds.skycluster.savitestbed.ca
+  resources:
   - xprovidersetups/finalizers
   verbs:
   - create

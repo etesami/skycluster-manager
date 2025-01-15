@@ -1,0 +1,135 @@
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: VirtualService
+metadata:
+  name: skyk8scluster
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: vs-config
+spec:
+  name: skyk8scluster
+  vservicecosts:
+    - providerReference: 
+        name: savi
+        region: vaughan
+        type: near-the-edge
+      cost: "5"
+    - providerReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      cost: "5"
+    - providerReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      cost: "5"
+    - providerReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      cost: "5"
+    - providerReference: 
+        name: aws
+        region: us-east-1
+        type: cloud
+      cost: "5"
+  vserviceCompositions:
+    - apiVersion: xrds.skycluster.savitestbed.ca/v1alpha1
+      kind: SkyK8SCluster
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: VirtualService
+metadata:
+  name: vs1
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: vs-config
+spec:
+  name: vs1
+  vservicecosts:
+    - providerReference: 
+        name: azure
+        region: canadacentral
+        type: edge
+      cost: "80"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: VirtualService
+metadata:
+  name: vs2
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: vs-config
+spec:
+  name: vs2
+  vservicecosts:
+    - providerReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      cost: "86"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: VirtualService
+metadata:
+  name: vs3
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: vs-config
+spec:
+  name: vs3
+  vservicecosts:
+    - providerReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      cost: "63"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: VirtualService
+metadata:
+  name: vs4
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: vs-config
+spec:
+  name: vs4
+  vservicecosts:
+    - providerReference: 
+        name: gcp
+        region: us-east1
+        type: cloud
+      cost: "28"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: VirtualService
+metadata:
+  name: vs5
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: vs-config
+spec:
+  name: vs5
+  vservicecosts:
+    - providerReference: 
+        name: savi
+        region: scinet
+        type: cloud
+      cost: "58"
+---
+apiVersion: core.skycluster-manager.savitestbed.ca/v1alpha1
+kind: VirtualService
+metadata:
+  name: vs6
+  annotations:
+    skycluster-manager.savitestbed.ca/managed-by: skycluster
+    skycluster-manager.savitestbed.ca/config-type: vs-config
+spec:
+  name: vs6
+  vservicecosts:
+    - providerReference: 
+        name: gcp
+        region: us-west1
+        type: cloud
+      cost: "91"
+---
